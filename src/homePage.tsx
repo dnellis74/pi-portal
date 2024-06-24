@@ -20,31 +20,60 @@ function parseJwt(token) {
   return JSON.parse(jsonPayload);
 }
 
+const LinkCellRenderer = (props) => {
+  const cellValue = props.value;
+  const url = `${props.data.id}`; // Adjust the URL as needed
+
+  return (
+    <a href={url} onClick={(e) => {
+      e.preventDefault();
+      // Handle click event, e.g. navigation
+      console.log(`Clicked link for ${cellValue}`);
+    }}>
+      {cellValue}
+    </a>
+  );
+};
+
 // Row Data Interface
 interface IRow {
-  mission: string;
-  company: string;
-  location: string;
-  date: string;
-  time: string;
-  rocket: string;
-  price: number;
-  successful: boolean;
+  updated: string;
+  count_by_state: number;
+  State: string;
+  epa_region: number;
+  Regulation: string;
+  Description: string;
+  Link: string;
 }
 
-const GridExample = () => {
+const PolicyTable = () => {
   // Row Data: The data to be displayed.
   const [rowData, setRowData] = useState<IRow[]>([]);
 
+  const LinkCellRenderer = (props) => {
+    return <a href={props.data.Link} target="_blank"> {props.data.Regulation} </a>;
+  };
+
   // Column Definitions: Defines & controls grid columns.
   const [colDefs] = useState<ColDef[]>([
-    { field: "mission" },
-    { field: "company" },
-    { field: "location" },
-    { field: "date" },
-    { field: "price" },
-    { field: "successful" },
-    { field: "rocket" }
+    {
+      field: "updated",
+      headerName: "Updated"
+    },
+    {
+      field: "count_by_state",
+      headerName: "Count By State"
+    },
+    { field: "State" },
+    {
+      field: "epa_region",
+      headerName: "EPA Region"
+    },
+    {
+      headerName: "Regulation",
+      cellRenderer: LinkCellRenderer
+    },
+    { field: "Description" }
   ]);
 
   // Apply settings across all columns
@@ -56,7 +85,7 @@ const GridExample = () => {
 
   // Fetch data & update rowData state
   useEffect(() => {
-    fetch('https://www.ag-grid.com/example-assets/space-mission-data.json') // Fetch data from server
+    fetch('documents.json') // Fetch data from server
       .then(result => result.json()) // Convert to JSON
       .then(rowData => setRowData(rowData)) // Update state of `rowData`
   }, [])
@@ -96,7 +125,7 @@ const HomePage = () => {
   return (
     <div>
       <h1>Policy Intelligence</h1>
-      <GridExample />
+      <PolicyTable />
 
       <button onClick={handleLogout}>Logout</button>
       <p>See console log for Amazon Cognito user tokens.</p>
