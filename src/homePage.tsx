@@ -85,7 +85,7 @@ const PolicyTable = () => {
 
   // Fetch data & update rowData state
   useEffect(() => {
-    fetch('documents.json') // Fetch data from server
+    fetch('/documents.json') // Fetch data from server
       .then(result => result.json()) // Convert to JSON
       .then(rowData => setRowData(rowData)) // Update state of `rowData`
   }, [])
