@@ -89,4 +89,6 @@ dist
 tmp/
 temp/
 
-scrape/download
+utils/scrape/download
+utils/pdf2opensearch/lib
+utils/pdf2opensearch/bin
