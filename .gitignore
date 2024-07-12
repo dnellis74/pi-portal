@@ -89,6 +89,10 @@ dist
 tmp/
 temp/
 
-utils/scrape/download
+utils/pdf2opensearch/download
 utils/pdf2opensearch/lib
 utils/pdf2opensearch/bin
+
+utils/scrape/download
+utils/scrape/.venv/lib
+utils/scrape/.venv/bin
