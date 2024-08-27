@@ -124,7 +124,7 @@ const HomePage = () => {
 
   return (
     <div>
-      <h1>Policy Intelligence</h1>
+      <img src="/PI-Logo.png" width="300px"/>
       <PolicyTable />
 
       <button onClick={handleLogout}>Logout</button>

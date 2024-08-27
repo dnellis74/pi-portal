@@ -48,7 +48,8 @@ const LoginPage = () => {
 
   return (
     <div className="loginForm">
-      <h1>Welcome</h1>
+      <img src="/PI-Logo.png" width="300px"/> 
+      <h3>Welcome</h3>
       <h4>{isSignUp ? 'Sign up to create an account' : 'Sign in to your account'}</h4>
       <form onSubmit={isSignUp ? handleSignUp : handleSignIn}>
         <div>
