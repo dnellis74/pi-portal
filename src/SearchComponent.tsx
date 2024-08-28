@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import config from "./config.json";
+
 
 
 const SearchComponent: React.FC = () => {
@@ -7,7 +9,7 @@ const SearchComponent: React.FC = () => {
   const [results, setResults] = useState<any[]>([]);
 
   const handleSearch = async () => {
-    const apiKey = 'bUKqqZz6x411MkdamhzIz7Ux8lshYfAbb1d4s3Il5yAzSeD037eF';
+    const apiKey = config.azureSearchApiKey;
     const serviceName = 'polint';
     const indexName = 'ai-index';
     const apiVersion = '2016-09-01'; // Use the appropriate API version
