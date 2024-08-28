@@ -96,4 +96,3 @@ utils/pdf2opensearch/bin
 utils/scrape/download
 utils/scrape/.venv/lib
 utils/scrape/.venv/bin
-src/config.json
