@@ -1,65 +1,126 @@
 from pathlib import Path
-
 import scrapy
 import json
 import scrapy.utils
 import validators
 import os
+import shutil
 import magic
 from urllib.parse import urlparse
 import logging
+import re
+import random  # For random delay
 
 class RegsSpider(scrapy.Spider):
     name = "regs"
 
-    def start_requests(self):
+    # Optimized settings for better performance
+    custom_settings = {
+        'DOWNLOAD_DELAY': random.uniform(0.1, .5),  # Random delay between requests to reduce rate-limiting
+        'RETRY_ENABLED': True,
+        'RETRY_TIMES': 3,  # Lower retries to avoid wasting time on persistent failures
+        'RETRY_HTTP_CODES': [429, 500, 502, 503, 504],  # Retry on these HTTP errors
+        'CONCURRENT_REQUESTS': 64,  # Adjust concurrency to balance speed and reliability
+        'REDIRECT_ENABLED': True,
+        'REDIRECT_MAX_TIMES': 10,
+        'DOWNLOAD_TIMEOUT': 120,  # Increase timeout slightly for slower responses
+        'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',  # Use a common user-agent
+        'COOKIES_ENABLED': False,  # Disable cookies to avoid tracking
+        'ROBOTSTXT_OBEY': False,  # Ignore robots.txt for comprehensive scraping
+    }
 
+    def __init__(self, *args, **kwargs):
+        super(RegsSpider, self).__init__(*args, **kwargs)
+        self.reset_download_folder()
+
+    def reset_download_folder(self):
+        download_dir = "download"
+        if os.path.exists(download_dir):
+            shutil.rmtree(download_dir)
+        os.makedirs(download_dir)
+
+    def start_requests(self):
         # Read URLs from the JSON file
-        with open('../../public/documents.json', 'r') as f:
+        with open('C:/Users/loren/OneDrive/Documents/Python Scripts/pi-portal/pi-portal/public/documents.json', 'r') as f:
             documents = json.load(f)
 
-        # Create request
+        # Create requests
         for doc in documents:
             if doc['State'] == 'XXXX':
-                 logging.info("Only " + doc['State'])
-                 continue
+                logging.info("Only " + doc['State'])
+                continue
             if 'Link' in doc and doc['Link']:
                 if validators.url(doc['Link'], strict_query=False):
-                    yield scrapy.Request(url=doc['Link'], callback=self.parse)
+                    # Pass the document information to the callback
+                    yield scrapy.Request(url=doc['Link'], callback=self.parse, meta={'doc_info': doc}, errback=self.handle_error)
                 else:
                     logging.error(doc['Description'] + " has invalid link " + doc['Link'])
             else:
                 logging.error(doc['Description'] + " has no link")
 
     def parse(self, response):
-        # Get the filename without the query string
-        parsed_url = urlparse(response.url)
-        filename = parsed_url.path.rstrip('/').split('/')[-1]
+        # Get document information from meta data
+        doc_info = response.meta['doc_info']
+
+        # Generate a meaningful file name from the document information
+        base_filename = self.create_filename(doc_info)
 
         # Create a subdirectory named after the domain
+        parsed_url = urlparse(response.url)
         domain_directory = os.path.join("download/", parsed_url.netloc)
         os.makedirs(domain_directory, exist_ok=True)
 
-        # Check if the file already exists and generate a unique filename if needed
-        file_path = os.path.join(domain_directory, parsed_url.netloc + "-" + filename)
+        # Create the full file path with the new base filename
+        file_path = os.path.join(domain_directory, base_filename)
         file_path = self.get_unique_filename(file_path)            
-        
+
         # Save the response body
-        with open(file_path, 'wb') as f:
-            f.write(response.body)
-        
+        try:
+            with open(file_path, 'wb') as f:
+                f.write(response.body)
+        except FileExistsError:
+            self.log(f"File already exists: {file_path}", level=logging.ERROR)
+            return
+        except OSError as e:
+            self.log(f"OS error occurred while saving {file_path}: {e}", level=logging.ERROR)
+            return
+
         mime_type = self.mime_type(file_path)
-        # make it a pdf, if it's a poorly named pdf
-        if (not file_path.endswith('.pdf') and mime_type == 'application/pdf'):
-            os.rename(file_path, file_path + '.pdf')
 
-        if (not file_path.endswith('.doc') and mime_type == 'application/msword'):
-            os.rename(file_path, file_path + '.doc')
+        # Rename files based on MIME type with unique name check
+        new_file_path = file_path
+        if not file_path.endswith('.pdf') and mime_type == 'application/pdf':
+            new_file_path = file_path + '.pdf'
+        elif not file_path.endswith('.doc') and mime_type == 'application/msword':
+            new_file_path = file_path + '.doc'
+        elif not file_path.endswith('.html') and mime_type == 'text/html':
+            new_file_path = file_path + '.html'
+        
+        # Check if new file path exists and generate a unique name
+        new_file_path = self.get_unique_filename(new_file_path)
 
-        if (not file_path.endswith('.html') and mime_type == 'text/html'):
-            os.rename(file_path, file_path + '.html')
-            
-        self.log(f'Saved file {filename}')
+        # Rename the file
+        if new_file_path != file_path:
+            try:
+                os.rename(file_path, new_file_path)
+            except FileExistsError:
+                self.log(f"File rename error: {new_file_path} already exists.", level=logging.ERROR)
+            except OSError as e:
+                self.log(f"OS error occurred while renaming {file_path} to {new_file_path}: {e}", level=logging.ERROR)
+                return
+
+        self.log(f'Saved file {new_file_path}')
+
+    def handle_error(self, failure):
+        # Log all errors and handle retries with exponential backoff
+        self.log(f"Request failed: {failure.request.url} - {failure.value}", level=logging.ERROR)
+
+    def create_filename(self, doc_info):
+        # Combine relevant fields to create a meaningful filename
+        filename = f"{doc_info['State']}_{doc_info['Regulation']}_{doc_info['updated']}"
+        # Sanitize the filename by removing or replacing any illegal characters
+        filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
+        return filename
 
     def get_unique_filename(self, file_path):
         base, ext = os.path.splitext(file_path)
@@ -72,3 +133,6 @@ class RegsSpider(scrapy.Spider):
     def mime_type(self, file_path):
         mime = magic.Magic(mime=True)
         return mime.from_file(file_path)
+
+
+
