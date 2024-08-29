@@ -8,6 +8,8 @@ import "@ag-grid-community/styles/ag-theme-material.css"; // Theme
 import { ColDef, ModuleRegistry } from '@ag-grid-community/core';
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
 
+import SearchComponent from './SearchComponent';
+
 ModuleRegistry.registerModules([ClientSideRowModelModule]);
 
 /*eslint-disable*/
@@ -92,15 +94,15 @@ const PolicyTable = () => {
 
   // Container: Defines the grid's theme & dimensions.
   return (
-    <div className={"ag-theme-material"} style={{ width: 1048, height: 500 }}>
-      {/* The AG Grid component, with Row Data & Column Definition props */}
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={colDefs}
-        defaultColDef={defaultColDef}
-        pagination={true}
-      />
-    </div>
+      <div className={"ag-theme-material"} style={{ width: 1048, height: 500 }}>
+        {/* The AG Grid component, with Row Data & Column Definition props */}
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={colDefs}
+          defaultColDef={defaultColDef}
+          pagination={true}
+        />
+      </div>
   );
 }
 
@@ -123,13 +125,20 @@ const HomePage = () => {
   };
 
   return (
-    <div>
-      <h1>Policy Intelligence</h1>
-      <PolicyTable />
-
-      <button onClick={handleLogout}>Logout</button>
-      <p>See console log for Amazon Cognito user tokens.</p>
-    </div>
+    <span>
+      <div>
+        <img src="/PI-Logo.png" width="300px" />
+        <PolicyTable />
+      </div>
+      <div>
+        <h4>Azure Search Client</h4>
+        <SearchComponent />
+      </div>
+      <div>
+        <button onClick={handleLogout}>Logout</button>
+        <p>See console log for Amazon Cognito user tokens.</p>
+      </div>
+    </span>
   );
 };
 
