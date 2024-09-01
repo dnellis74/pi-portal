@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import logging
 import re
 import random  # For random delay
+from datetime import datetime  # For timestamped logs
 
 class RegsSpider(scrapy.Spider):
     name = "regs"
@@ -27,11 +28,33 @@ class RegsSpider(scrapy.Spider):
         'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',  # Use a common user-agent
         'COOKIES_ENABLED': False,  # Disable cookies to avoid tracking
         'ROBOTSTXT_OBEY': False,  # Ignore robots.txt for comprehensive scraping
+        'LOG_LEVEL': 'INFO',  # Log level
+        'LOG_STDOUT': True,  # Log to stdout (terminal)
     }
 
     def __init__(self, *args, **kwargs):
         super(RegsSpider, self).__init__(*args, **kwargs)
+        self.setup_logging()  # Setup logging with file and terminal output
         self.reset_download_folder()
+
+    def setup_logging(self):
+        # Setup logging with both file and terminal output
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_filename = f'scrapy_output_{timestamp}.log'
+
+        # Clear existing handlers
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+
+        # File handler
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+            handlers=[
+                logging.FileHandler(log_filename),
+                logging.StreamHandler()  # Terminal output
+            ]
+        )
 
     def reset_download_folder(self):
         download_dir = "download"
@@ -40,23 +63,24 @@ class RegsSpider(scrapy.Spider):
         os.makedirs(download_dir)
 
     def start_requests(self):
-        # Read URLs from the JSON file
+        # Read URLs from the JSON file # Change file location
         with open('C:/Users/loren/OneDrive/Documents/Python Scripts/pi-portal/pi-portal/public/documents.json', 'r') as f:
             documents = json.load(f)
 
         # Create requests
         for doc in documents:
-            if doc['State'] == 'XXXX':
-                logging.info("Only " + doc['State'])
+            state = doc.get('State', 'Unknown')  # Extract state information
+            if state == 'XXXX':
+                logging.info("Only " + state)
                 continue
             if 'Link' in doc and doc['Link']:
                 if validators.url(doc['Link'], strict_query=False):
                     # Pass the document information to the callback
                     yield scrapy.Request(url=doc['Link'], callback=self.parse, meta={'doc_info': doc}, errback=self.handle_error)
                 else:
-                    logging.error(doc['Description'] + " has invalid link " + doc['Link'])
+                    self.log(f"{doc['Description']} has invalid link {doc['Link']} for state {state}", level=logging.ERROR)
             else:
-                logging.error(doc['Description'] + " has no link")
+                self.log(f"{doc['Description']} has no link for state {state}", level=logging.ERROR)
 
     def parse(self, response):
         # Get document information from meta data
@@ -113,7 +137,8 @@ class RegsSpider(scrapy.Spider):
 
     def handle_error(self, failure):
         # Log all errors and handle retries with exponential backoff
-        self.log(f"Request failed: {failure.request.url} - {failure.value}", level=logging.ERROR)
+        state = failure.request.meta['doc_info'].get('State', 'Unknown')
+        self.log(f"Request failed: {failure.request.url} - {failure.value} for state {state}", level=logging.ERROR)
 
     def create_filename(self, doc_info):
         # Combine relevant fields to create a meaningful filename
@@ -133,6 +158,5 @@ class RegsSpider(scrapy.Spider):
     def mime_type(self, file_path):
         mime = magic.Magic(mime=True)
         return mime.from_file(file_path)
-
 
 
