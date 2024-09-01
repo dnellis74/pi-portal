@@ -64,7 +64,8 @@ class RegsSpider(scrapy.Spider):
 
     def start_requests(self):
         # Read URLs from the JSON file # Change file location
-        with open('C:/Users/loren/OneDrive/Documents/Python Scripts/pi-portal/pi-portal/public/documents.json', 'r') as f:
+        data_path = '../../public/documents.json'
+        with open(data_path, 'r') as f:
             documents = json.load(f)
 
         # Create requests

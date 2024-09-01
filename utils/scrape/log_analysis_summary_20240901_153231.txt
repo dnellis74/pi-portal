@@ -1,0 +1,93 @@
+Total Links Working: 0
+Total Links Not Working: 69
+
+Links by State:
+State: Colorado, Working: 0, Not Working: 5
+State: Massachusetts, Working: 0, Not Working: 1
+State: New Hampshire, Working: 0, Not Working: 40
+State: West Virginia, Working: 0, Not Working: 16
+State: Maryland, Working: 0, Not Working: 2
+State: California, Working: 0, Not Working: 5
+
+Detailed List of Non-Working Links by State:
+
+State: Colorado
+- https://drive.google.com/file/d/1Fqu8iSJztiXh5YJt8Tbmfv7KbKUhnBgs/view?usp=share_link
+- https://drive.google.com/file/d/1c-E_3K02kRM3omZYJnlJ7hxEg9Mei6Ji/view?usp=share_link
+- https://drive.google.com/file/d/1WvAx0jzKjU7gbnn8VRaqIcy5-qxQxUUy/view?usp=share_link
+- https://drive.google.com/file/d/1P5_sAriqliLw_XOnYet-BBexBID68JPY/view?usp=sharing
+- https://drive.google.com/file/d/1IXCo5cHBfUsH1PmfAGNKOomAsuPp9rLB/view?usp=sharing
+
+State: Massachusetts
+- https://www.mass.gov/media/1596301/download
+
+State: New Hampshire
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-toc.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-100.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-200.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-300.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-400.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-500.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-600.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%20700.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%20800.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%20900.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%201000.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-1100.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/Env-A%201200.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-1300.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-1400.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a1500-certified.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-1600.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a1700-certified.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%201800.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-1900.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-2000.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-2100.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%202300.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-2400.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-2700.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%202800.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/enva2900_0.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-3000.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-3100.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%203200.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%203300.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-4100-rmn.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%204100.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-4100-ip.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%204200.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/2020-01/Env-A%204300.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a4600-certified.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-4800-ip.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a-4800-rmn.pdf
+- https://www.des.nh.gov/sites/g/files/ehbemt341/files/documents/env-a4800-recertified.pdf
+
+State: West Virginia
+- https://dep.wv.gov/daq/planning/Documents/45-02a.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-04.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-7A.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-10A.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-11.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-13A.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-13B.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-17.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-20.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-22.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-27.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-28.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-31.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-31B.pdf
+- https://dep.wv.gov/daq/planning/Documents/45-32.pdf
+- https://dep.wv.gov/daq/General/Documents/Final%2035.pdf
+
+State: Maryland
+- https://dsd.maryland.gov/regulations/Pages/26.11.03.24.aspx
+- https://dsd.maryland.gov/regulations/Pages/26.11.19.10-01.aspx
+
+State: California
+- https://ww2.arb.ca.gov/sites/default/files/classic/technology-clearinghouse/rules/RuleID4934.pdf
+- https://ww2.arb.ca.gov/sites/default/files/classic/technology-clearinghouse/rules/RuleID2363.pdf
+- https://ww2.arb.ca.gov/sites/default/files/classic/technology-clearinghouse/rules/RuleID3266.pdf
+- https://ww2.arb.ca.gov/sites/default/files/classic/technology-clearinghouse/rules/RuleID3364.pdf
+- https://ww2.arb.ca.gov/sites/default/files/classic/technology-clearinghouse/rules/RuleID2802.html
