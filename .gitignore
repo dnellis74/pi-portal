@@ -3,6 +3,14 @@
 /.pnp
 .pnp.js
 
+# Ignore log and output files
+*.log
+utils/scrape/scrape/spiders/log_analysis_summary_*.txt
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
 # Testing
 /coverage
 
