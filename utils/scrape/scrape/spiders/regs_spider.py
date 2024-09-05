@@ -64,7 +64,7 @@ class RegsSpider(scrapy.Spider):
 
     def start_requests(self):
         # Read URLs from the JSON file # Change file location
-        data_path = '../../public/documents.json'
+        data_path = '../../../../public/documents.json'
         with open(data_path, 'r') as f:
             documents = json.load(f)
 
