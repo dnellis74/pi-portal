@@ -115,3 +115,4 @@ venv/
 # Ignore the download folder
 utils/scrape/scrape/spiders/download/
 
+utils/scrape/crawl1

@@ -130,11 +130,13 @@ class RegsSpider(scrapy.Spider):
                 os.rename(file_path, new_file_path)
             except FileExistsError:
                 self.log(f"File rename error: {new_file_path} already exists.", level=logging.ERROR)
+                return
             except OSError as e:
                 self.log(f"OS error occurred while renaming {file_path} to {new_file_path}: {e}", level=logging.ERROR)
                 return
 
         self.log(f'Saved file {new_file_path}')
+        yield 1
 
     def handle_error(self, failure):
         # Log all errors and handle retries with exponential backoff
