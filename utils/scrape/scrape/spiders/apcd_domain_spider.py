@@ -7,19 +7,18 @@ from bs4 import BeautifulSoup
 import logging
 import random
 
-# Use absolute path to the JSON file
-json_path = r"C:\Users\loren\OneDrive\Documents\Python Scripts\pi-portal\pi-portal\public\apcd_domains.json"
-
-# Load allowed domains and allowed URLs from the JSON file
-with open(json_path, 'r') as f:
-    config = json.load(f)
-
-# Ensure the keys are in the JSON
-allowed_domains = config.get("allowed_domains", [])
-allowed_urls = config.get("allowed_urls", [])
-
 class APcdLinkSpider(CrawlSpider):
     name = "apcd_domains"
+    # Use absolute path to the JSON file
+    json_path = r"C:\Users\loren\OneDrive\Documents\Python Scripts\pi-portal\pi-portal\public\apcd_domains.json"
+
+    # Load allowed domains and allowed URLs from the JSON file
+    with open(json_path, 'r') as f:
+        config = json.load(f)
+
+    # Ensure the keys are in the JSON
+    allowed_domains = config.get("allowed_domains", [])
+    allowed_urls = config.get("allowed_urls", [])
     allowed_domains = allowed_domains  # Load allowed domains from JSON
     start_urls = ["https://cdphe.colorado.gov/apcd"]  # Start at the parent domain
 
