@@ -11,8 +11,7 @@ import random  # For random delay
 from datetime import datetime  # For timestamped logs
 import json # for dumping dicts
 
-from selenium_onbase_pdf import SeleniumOnBasePdf
-
+from selenium_downloader import SeleniumDownloader
 class ApcdSpider(CrawlSpider):
     name = "apcd"
     allowed_domains=['cdphe.colorado.gov',
@@ -46,7 +45,7 @@ class ApcdSpider(CrawlSpider):
         self.download_dir = "download/apcd"
         self.setup_logging()  # Setup logging with file and terminal output
         self.reset_download_folder()
-        self.selenium = SeleniumOnBasePdf(self.download_dir)
+        self.selenium = SeleniumDownloader(self.download_dir)
 
         
 
