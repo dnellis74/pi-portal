@@ -40,11 +40,11 @@ const SearchComponent: React.FC = () => {
         placeholder="Search..."
       />
       <button onClick={handleSearch}>Search</button>
-      <ul style={{ textAlign: 'left', listStyleType: 'square' }}>
+      <ol style={{ textAlign: 'left', listStyleType: 'square' }}>
         {results.map((result, index) => (
           <li key={index}><Link to={result.url} target='top'>{result.title}</Link></li> // Adjust based on your document structure
         ))}
-      </ul>
+      </ol>
     </div>
   );
 };
