@@ -11,7 +11,7 @@ const SearchComponent: React.FC = () => {
   const handleSearch = async () => {
     const apiKey = config.azureSearchApiKey;
     const serviceName = 'polint';
-    const indexName = 'ai-index';
+    const indexName = 'ai-index-blue';
     const apiVersion = '2016-09-01'; // Use the appropriate API version
 
     const url = `https://${serviceName}.search.windows.net/indexes/${indexName}/docs?api-version=${apiVersion}&search=${encodeURIComponent(query)}`;
