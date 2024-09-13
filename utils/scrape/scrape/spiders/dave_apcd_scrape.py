@@ -46,12 +46,18 @@ class ApcdScrape(CrawlSpider):
         'USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
         'COOKIES_ENABLED': True,
         'ROBOTSTXT_OBEY': False,
-        'LOG_LEVEL': 'INFO',
+        'LOG_LEVEL': 'DEBUG',
         'LOG_STDOUT': True,
         'DEPTH_LIMIT': 0,  # Increase depth limit to 5
         'OFFSITE_ENABLED': True
     }
-
+    def is_valid_url(self, url):
+        regex = re.compile(
+            r'^(?:http|ftp)s?://'  # http:// or https://
+            r'(?:[\w-]+(?:(?:\.[\w-]+)+))'  # Domain name
+            r'(?::\d+)?'  # Optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        return re.match(regex, url) is not None
 
     def __init__(self, *args, **kwargs):
         super(ApcdScrape, self).__init__(*args, **kwargs)
@@ -62,7 +68,7 @@ class ApcdScrape(CrawlSpider):
     def parse(self, response):
         try:
             soup = BeautifulSoup(response.text, 'html.parser')
-            self.save_html(soup, response)
+            # self.save_html(soup, response) Skipping the html storage
 
             # Find all anchor tags
             anchor_tags = soup.find_all('a')
@@ -72,37 +78,64 @@ class ApcdScrape(CrawlSpider):
                 href = tag.get('href')  # Extract the href attribute
                 content = tag.text.strip()  # Extract and clean the content inside the tag
                 if href:
-                    # If href is a relative URL, make it absolute
-                    href = response.urljoin(href)
+                    # Add logging to inspect href values
+                    self.log(f'Original href: {href}', logging.DEBUG)
 
-                    # Check if the link contains 'hylandcloud' (case insensitive)
-                    if 'hylandcloud' in href:
-                        self.selenium.download_onbase_pdf(href)
-                    elif 'google' in href:
-                        self.selenium.download_google_url(href)
-            yield { 'status': 'success',  'url': (response.url)}
+                    # Check if href is already an absolute URL
+                    parsed_href = urlparse(href)
+                    if parsed_href.scheme:
+                        # href is already an absolute URL
+                        absolute_href = href
+                    else:
+                        # href is a relative URL
+                        absolute_href = response.urljoin(href)
+
+                    # Log the absolute URL
+                    self.log(f'Absolute URL: {absolute_href}', logging.DEBUG)
+
+                    # Handle malformed URLs gracefully
+                    if self.is_valid_url(absolute_href):
+                        # Check if the link contains 'hylandcloud' (case insensitive)
+                        if 'hylandcloud' in absolute_href.lower():
+                            self.selenium.download_onbase_pdf(absolute_href)
+                        elif 'google' in absolute_href.lower():
+                            self.selenium.download_google_url(absolute_href)
+                    else:
+                        self.log(f'Invalid URL skipped: {absolute_href}', logging.WARNING)
+            yield {'status': 'success', 'url': response.url}
         except Exception as e:
-            yield { 'status': 'failure',  'url': (response.url)}
+            self.log(f'Error processing {response.url}: {e}', logging.ERROR)
+            yield {'status': 'failure', 'url': response.url}
         
     def save_html(self, soup, response):
         # Generate a meaningful file name from the document information
-        title = soup.title.string
-        base_filename = title
+        if soup.title and soup.title.string:
+            title = soup.title.string
+        else:
+            title = 'Untitled'
+
+        # Sanitize the filename by removing or replacing any illegal characters
+        base_filename = re.sub(r"[\\/*?:\"<>|]", '_', title)
+        if not base_filename:
+            base_filename = 'Untitled'
 
         # Create a subdirectory named after the domain
         parsed_url = urlparse(response.url)
         domain_directory = os.path.join(self.download_dir, parsed_url.netloc)
         os.makedirs(domain_directory, exist_ok=True)
-        # Create the full file path with the new base filename
+
+        # Create the full file path with the sanitized base filename
         file_path = os.path.join(domain_directory, base_filename)
-        file_path = self.get_unique_filename(file_path)            
+        file_path = self.get_unique_filename(file_path)
+        self.log(f'Sanitized filename: {base_filename}', logging.DEBUG)
 
         # Save the response body
         with open(file_path, 'wb') as f:
             f.write(response.body)
 
-
+        # Determine the MIME type
         mime_type = self.mime_type(file_path)
+        self.log(f'MIME type of {file_path}: {mime_type}', logging.DEBUG)
 
         # Rename files based on MIME type with unique name check
         new_file_path = file_path
@@ -112,7 +145,7 @@ class ApcdScrape(CrawlSpider):
             new_file_path = file_path + '.doc'
         elif not file_path.endswith('.html') and mime_type == 'text/html':
             new_file_path = file_path + '.html'
-        
+
         # Check if new file path exists and generate a unique name
         new_file_path = self.get_unique_filename(new_file_path)
 
@@ -129,12 +162,14 @@ class ApcdScrape(CrawlSpider):
 
         self.log(f'Saved [{response.url}] to [{new_file_path}]', logging.INFO)
 
+
     def create_filename(self, doc_info):
         # Combine relevant fields to create a meaningful filename
-        filename = f'{doc_info['State']}_{doc_info['Regulation']}_{doc_info['updated']}'
+        filename = f"{doc_info['State']}_{doc_info['Regulation']}_{doc_info['updated']}"
         # Sanitize the filename by removing or replacing any illegal characters
         filename = re.sub(r"[\\/*?:'<>|]", '_', filename)
         return filename
+
 
     def get_unique_filename(self, file_path):
         base, ext = os.path.splitext(file_path)
@@ -145,6 +180,11 @@ class ApcdScrape(CrawlSpider):
         return file_path
 
     def mime_type(self, file_path):
-        mime = magic.Magic(mime=True)
-        return mime.from_file(file_path)
+        try:
+            mime = magic.Magic(mime=True)
+            return mime.from_file(file_path)
+        except Exception as e:
+            self.log(f'Could not determine MIME type for {file_path}: {e}', logging.WARNING)
+            return 'application/octet-stream'
+
     
