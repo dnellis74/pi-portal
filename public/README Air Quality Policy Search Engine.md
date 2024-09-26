@@ -2,10 +2,11 @@
 
 This document outlines the approach and requirements for building a smart search engine using AWS Kendra, specifically tailored for air quality policies across 60+ states and air districts. This search engine will facilitate targeted searches, filtering, and enrichment of documents from state and district agencies responsible for air quality management.
 
-## 1. Data Sources and Naming Convention
+## 1. Data Sources and Naming Convention (not relelvant right now with only 5 datasource)
 
-We will use AWS Kendra’s ability to handle multiple data sources, with each state or air district treated as a separate data source. The naming convention will follow a standard format:
+We will use AWS Kendra’s ability to handle multiple data sources and create data sources by path
 
+New naming convention - this won't work
 - **Format**: `[State]-[district (if applicable)]-[agency-name]`
 - **Example**: `Colorado-dept-public-health-environment`, `California-south coast-air-quality-management-district`
 
@@ -13,13 +14,19 @@ This allows us to map the documents accurately and easily create filters by stat
 
 ## 2. Web Crawling Strategy
 
-Each data source will have a defined set of domains to be crawled for relevant policy documents. We will target primary domains where valuable air quality policy documents are most likely to reside.
+Set custom python crawlers
 
 ### Examples of Targeted Scraping:
 - **SCAQMD**: Focus on the single domain we have right now (https://www.aqmd.gov/docs).
 - **Colorado**: 29 different domains identified for crawling.
 
 The goal is to remain under Kendra Developer Edition's limit of **10,000 documents** or 166 docs per 60 state/distric, so strategic domain targeting is crucial and filtering on doc type to dowqnload are key.
+
+### Sprint 0:
+- We will start by placing the 50 state docs in an s3 bucket, indexing those. This will be the 50 state datasource. Tag all those as "regulations" using Kendra data enrichment.
+- Upload Colorado Policy into S3, index and enrich as "Colorado" and "Policy." This achieves document type and geographic filtering.
+- Amazon Comprehend: we will use this feature to further enrich state jurisdiction for state regulations for the 50 state data source
+- Stretch: classifier for document type using the AQ Document Type document
 
 ## 3. Document Type Targeting
 
