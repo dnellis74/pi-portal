@@ -1,4 +1,0 @@
-*.log
-
-scrape/__pycache__
-scrape/spiders/__pycache__
