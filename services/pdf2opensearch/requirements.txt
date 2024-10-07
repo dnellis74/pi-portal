@@ -1,0 +1,70 @@
+asgiref==3.8.1
+attrs==23.2.0
+Automat==22.10.0
+awscli==1.33.7
+awsebcli==3.20.10
+blessed==1.20.0
+boto3==1.34.43
+botocore==1.31.85
+cement==2.8.2
+certifi==2024.6.2
+cffi @ file:///private/tmp/cffi-20231212-42180-nb05ya/cffi-1.16.0
+charset-normalizer @ file:///private/tmp/python-charset-normalizer-20231124-5409-dzj2ez/charset-normalizer-3.3.2
+colorama==0.4.3
+constantly==23.10.4
+cryptography==42.0.8
+cssselect==1.2.0
+defusedxml==0.7.1
+dj-database-url==1.3.0
+Django==5.0.6
+django-storages==1.14.3
+docutils==0.16
+Events==0.5
+filelock==3.13.1
+fsspec==2024.3.1
+huggingface-hub==0.21.4
+hyperlink==21.0.0
+idna @ file:///private/tmp/python-idna-20231125-5404-ostvf5/idna-3.6
+incremental==22.10.0
+itemadapter==0.9.0
+itemloaders==1.3.1
+Jinja2 @ file:///private/tmp/python-jinja-20240111-4980-wxbfhp/Jinja2-3.1.3
+jmespath==1.0.1
+lxml==5.2.2
+MarkupSafe @ file:///private/tmp/python-markupsafe-20240204-5096-dgsy34/MarkupSafe-2.1.5
+opensearch-py==2.6.0
+packaging==24.1
+parsel==1.9.1
+pathspec==0.10.1
+Protego==0.3.1
+psutil @ file:///private/tmp/python-psutil-20240120-4912-5zd9yy/psutil-5.9.8
+psycopg2-binary==2.9.6
+pyasn1==0.6.0
+pyasn1_modules==0.4.0
+pycparser==2.22
+PyDispatcher==2.0.7
+pyOpenSSL==24.1.0
+PyPDF2==3.0.1
+python-dateutil @ file:///private/tmp/python-dateutil-20240302-5183-6arzt0/python-dateutil-2.9.0.post0
+python-magic==0.4.27
+PyYAML @ file:///private/tmp/pyyaml-20231019-6134-1qsnlp0/PyYAML-6.0.1
+queuelib==1.7.0
+requests @ file:///private/tmp/python-requests-20231124-5870-cua30x/requests-2.31.0
+requests-file==2.1.0
+rsa==4.7.2
+s3transfer==0.10.0
+Scrapy==2.11.2
+semantic-version==2.8.5
+service-identity==24.1.0
+six==1.16.0
+sqlparse==0.5.0
+termcolor==1.1.0
+tldextract==5.1.2
+tqdm==4.66.2
+Twisted==24.3.0
+typing_extensions @ file:///private/tmp/python-typing-extensions-20240226-4884-sp176c/typing_extensions-4.10.0
+urllib3==1.26.18
+validators==0.31.0
+w3lib==2.2.1
+wcwidth==0.1.9
+zope.interface==6.4.post2
