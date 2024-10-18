@@ -1,3 +1,4 @@
+import logging
 import boto3
 import scrapy
 import json
@@ -8,7 +9,6 @@ import magic
 from urllib.parse import urlparse
 import re
 import random  # For random delay
-import logging
 
 class LegisSpider(scrapy.Spider):
     name = "legis"
@@ -31,15 +31,24 @@ class LegisSpider(scrapy.Spider):
         'LOG_STDOUT': False,  # Log to stdout (terminal)
     }
 
-    def __init__(self, legis_file=None, *args, **kwargs):
+    def __init__(self, legis_file=None, job_folder=None, *args, **kwargs):
         super(LegisSpider, self).__init__(*args, **kwargs)
+        
+        # Set logging level for boto3 and botocore
+        logging.getLogger('boto3').setLevel(logging.INFO)
+        logging.getLogger('botocore').setLevel(logging.INFO)
+        # Optional: Set logging level for specific AWS service-related modules (like s3transfer)
+        logging.getLogger('s3transfer').setLevel(logging.INFO)
+        
         # Initialize the S3 client
         self.s3_client = boto3.client('s3')
         self.bucket_name = 'sbx-piai-docs'
         self.mimeDetector = magic.Magic(mime=True)
+        self.job_folder = job_folder
+
         # Read the dictionary from the file
         try:
-            self.docs = self.read_from_s3('sbx-piai-docs', legis_file)
+            self.docs = self.read_from_s3('sbx-piai-docs', f'{job_folder}/{legis_file}')
         except Exception as e:
             raise Exception(f"Error reading file from S3: {e}")
 
@@ -57,9 +66,9 @@ class LegisSpider(scrapy.Spider):
                 if validators.url(url):
                     yield scrapy.Request(url=url, callback=self.parse, meta={'name': name, 'state': state})
                 else:
-                    print('please log an error')
+                    self.logger.error(f'invalid url [{url}]')
         except Exception as e:
-            print(e)
+            self.logger.error(e.with_traceback)
         
     def parse(self, response):
         try:
@@ -72,7 +81,7 @@ class LegisSpider(scrapy.Spider):
             base_filename = self.create_filename(leg_name, leg_jurisdiction)
 
             # Create a subdirectory named after the domain
-            domain_directory = os.path.join(f"download/{leg_domain}")
+            domain_directory = os.path.join(f"{self.job_folder}/{leg_domain}")
 
             # Create the full file path with the new base filename
             file_path = os.path.join(domain_directory, base_filename)
@@ -90,15 +99,14 @@ class LegisSpider(scrapy.Spider):
             # Save the response body
             self.write_response_to_s3(self.bucket_name, new_file_path, response)
 
-            #self.log(f'Saved file {new_file_path}')
             return {'url': response.url, 'status': response.status}
         except Exception as e:
-            self.log(f"Error processing {response.url}: {e}")
+            self.logger.error(f"Error processing {response.url}: {e}")
 
 
     def create_filename(self, name, jurisdiction):
         # Combine relevant fields to create a meaningful filename
-        filename = f"{jurisdiction}_{name}_now"
+        filename = f"{jurisdiction}_{name}"
         # Sanitize the filename by removing or replacing any illegal characters
         filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
         return filename
@@ -109,11 +117,9 @@ class LegisSpider(scrapy.Spider):
     def write_response_to_s3(self, bucket_name, object_name, response):
         # Upload the data
         self.s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=response.body)
-        #self.log(f"Data uploaded to '{bucket_name}/{object_name}' successfully.")
         
     def read_from_s3(self, bucket_name, object_name):
         # Read the object from S3
         response = self.s3_client.get_object(Bucket=bucket_name, Key=object_name)
         payload = response['Body'].read()
-        #self.log(f"Data read from '{bucket_name}/{object_name}' successfully.")
         return json.loads(payload)
