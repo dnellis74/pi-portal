@@ -31,17 +31,23 @@ class LegisSpider(scrapy.Spider):
         'LOG_STDOUT': False,  # Log to stdout (terminal)
     }
 
-    def __init__(self, legis_file=None, job_folder=None, *args, **kwargs):
+    def __init__(self, legis_file=None, job_folder=None, log_file=None, *args, **kwargs):
         super(LegisSpider, self).__init__(*args, **kwargs)
         
+        logging.getLogger().setLevel(logging.INFO)
         # Set logging level for boto3 and botocore
         logging.getLogger('boto3').setLevel(logging.INFO)
         logging.getLogger('botocore').setLevel(logging.INFO)
         # Optional: Set logging level for specific AWS service-related modules (like s3transfer)
         logging.getLogger('s3transfer').setLevel(logging.INFO)
+        logging.getLogger('urllib3').setLevel(logging.INFO)
+        logging.getLogger('scrapy').setLevel(logging.INFO)
+        logging.getLogger('scrapy').addHandler(logging.FileHandler(log_file))
+
         
         # Initialize the S3 client
         self.s3_client = boto3.client('s3')
+        
         self.bucket_name = 'sbx-piai-docs'
         self.mimeDetector = magic.Magic(mime=True)
         self.job_folder = job_folder
