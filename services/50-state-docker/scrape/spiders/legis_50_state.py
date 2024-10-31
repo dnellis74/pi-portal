@@ -62,19 +62,13 @@ class LegisSpider(scrapy.Spider):
         try:
             # Iterate over the dictionary and create requests for each URL
             for doc in self.docs:
-                for (key, value) in doc.items():
-                    if key == 'Link':
-                        url = value
-                    elif key == 'State':
-                        state = value
-                    elif key == 'Regulation Name':
-                        name = value
+                url = doc['url']
                 if validators.url(url):
-                    yield scrapy.Request(url=url, callback=self.parse, meta={'name': name, 'state': state})
+                    yield scrapy.Request(url=url, callback=self.parse, meta={'name': doc['name'], 'state': doc['jurisdiction']})
                 else:
                     self.logger.error(f'invalid url [{url}]')
         except Exception as e:
-            self.logger.error(e.with_traceback)
+            self.logger.error(e)
         
     def parse(self, response):
         try:

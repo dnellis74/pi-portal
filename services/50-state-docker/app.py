@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 import boto3
 import logging
@@ -32,7 +33,7 @@ def lambda_handler(event, context):
         extract_fields = True
         input_s3_key = f'{job_folder}/{legis_file}'
         if (extract_fields is True):
-            json_data = gsheet_to_file()
+            json_data = gsheet_to_json()
             s3_client.put_object(Bucket=bucket_name, Key=input_s3_key, Body=json_data)
             logging.info(f"Data uploaded to '{bucket_name}/{input_s3_key}' successfully.")
                 
@@ -49,38 +50,55 @@ def lambda_handler(event, context):
         s3_client.upload_file(log_file, bucket_name, f'{job_folder}/{log_file}')
     except Exception as e:
         logger.exception(f'Error: {e}')
-        return {
-            'statusCode': 500,
-            'body': {
-                'error': str(e),
-                'message': 'An unexpected error occurred.'
-            }
-        }
+        return 1
         
-    return {
-        'statusCode': 200,
-        'body': 'success'
-    }
-def gsheet_to_file():
+    return 0
+
+def gsheet_to_json():
         # Path to your service account credentials JSON file
         creds_file = './sbx-kendra-8e724bd9a0ce.json'
         # URL of the Google Sheet
-        sheet_id = '1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg'
-        sheet_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid=0'
-        worksheet_name = 'Individual doc links'
-        wanted_fields = ['State', 'Regulation Name', 'Link']
+        sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
         # Field to use as the key in the returned dictionary
         # Instantiate the GspreadArrayMap class
         gspread_map = GsheetArrayMap(creds_file)
-        # Retrieve data from the sheet
+        # Retrieve data
+        transformed_result = []
+                
+        # First - 50 states
+        logger.info("Reading 50 state")
+        worksheet_name = 'Individual doc links'
+        wanted_fields = ['State', 'Regulation Name', 'Link']
         docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
+        for doc in docs:
+            transformed_result.append((transform_row(wanted_fields, doc)))
+        
+        # Second - CARB
+        logger.info("Reading CARB")
         worksheet_name = 'CARB Current Air District Rule Data'
         wanted_fields = ['Air District Name', 'Rules', 'Regulatory Text']
-        docs = docs + gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
-
+        docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
+        for doc in docs:
+            transformed_result.append((transform_row(wanted_fields, doc)))
+                    
+        # Colorado guidance
+        logger.info("Reading Colorado guidance")        
+        sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
+        worksheet_name = 'support_docs'
+        wanted_fields = ['page_title', 'link_title', 'pdf_link']
+        docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
+        for doc in docs:
+            transformed_result.append((transform_row(wanted_fields, doc)))
+            
         # Write the dictionary to the file in JSON format
         # Convert the list to JSON
-        return json.dumps(docs, indent=4)
+        return json.dumps(transformed_result, indent=4)
+
+def transform_row(wanted_fields, doc):
+    return {'jurisdiction': doc[wanted_fields[0]], 'name': doc[wanted_fields[1]], 'url': doc[wanted_fields[2]]}
+    
+def get_sheet_url(sheet_id):
+    return f'https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid=0'
 
 if __name__ == '__main__':
     lambda_handler(None, None)

@@ -9,7 +9,6 @@ class GsheetArrayMap:
     Attributes:
         client (gspread.Client): The authenticated gspread client.
     """
-
     def __init__(self, creds_file):
         """
         Initialize the GspreadArrayMap with the provided credentials file.
@@ -50,7 +49,6 @@ class GsheetArrayMap:
             # Set up basic configuration
             logger = logging.getLogger(__name__)
 
-            logger.info("Reading 50 state spreadsheet")
             # Open the Google Sheet
             sheet = self.client.open_by_url(sheet_url)
             # Access the specified worksheet or the first one
@@ -69,7 +67,6 @@ class GsheetArrayMap:
             raise ValueError("wanted_fields do not match any columns in the sheet.")
 
         result = []
-
         for index, record in enumerate(records):
             try:
                 # Filter the record to include only wanted_fields
@@ -81,7 +78,6 @@ class GsheetArrayMap:
                 continue  # Continue processing the next row despite the error
 
         return result
-
 
 def main():
     """
@@ -98,7 +94,6 @@ def main():
         print(data)
     except Exception as e:
         print(f"An error occurred: {e}")
-
 
 if __name__ == '__main__':
     main()
