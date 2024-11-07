@@ -30,12 +30,11 @@ def lambda_handler(event, context):
         now = datetime.now()
         job_folder = f'scrape/{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}-{now.second}'
         ## Get urls from sheet and write them to file
-        extract_fields = True
         input_s3_key = f'{job_folder}/{legis_file}'
-        if (extract_fields is True):
-            json_data = gsheet_to_json()
-            s3_client.put_object(Bucket=bucket_name, Key=input_s3_key, Body=json_data)
-            logging.info(f"Data uploaded to '{bucket_name}/{input_s3_key}' successfully.")
+        
+        json_data = gsheet_to_json()
+        s3_client.put_object(Bucket=bucket_name, Key=input_s3_key, Body=json_data)
+        logging.info(f"Data uploaded to '{bucket_name}/{input_s3_key}' successfully.")
                 
         ## Crawl and write 
         # Initialize a Scrapy CrawlerProcess with your project's settings
@@ -57,30 +56,13 @@ def lambda_handler(event, context):
 def gsheet_to_json():
         # Path to your service account credentials JSON file
         creds_file = './sbx-kendra-8e724bd9a0ce.json'
-        # URL of the Google Sheet
-        sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
+
         # Field to use as the key in the returned dictionary
         # Instantiate the GspreadArrayMap class
         gspread_map = GsheetArrayMap(creds_file)
         # Retrieve data
         transformed_result = []
-                
-        # First - 50 states
-        logger.info("Reading 50 state")
-        worksheet_name = 'Individual doc links'
-        wanted_fields = ['State', 'Regulation Name', 'Link']
-        docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
-        for doc in docs:
-            transformed_result.append((transform_row(wanted_fields, doc)))
         
-        # Second - CARB
-        logger.info("Reading CARB")
-        worksheet_name = 'CARB Current Air District Rule Data'
-        wanted_fields = ['Air District Name', 'Rules', 'Regulatory Text']
-        docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
-        for doc in docs:
-            transformed_result.append((transform_row(wanted_fields, doc)))
-                    
         # Colorado guidance
         logger.info("Reading Colorado guidance")        
         sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
@@ -89,8 +71,24 @@ def gsheet_to_json():
         docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
         for doc in docs:
             transformed_result.append((transform_row(wanted_fields, doc)))
-            
-        # Write the dictionary to the file in JSON format
+                
+        # 50 states
+        logger.info("Reading 50 state")
+        sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
+        worksheet_name = 'Individual doc links'
+        wanted_fields = ['State', 'Regulation Name', 'Link']
+        docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
+        for doc in docs:
+            transformed_result.append((transform_row(wanted_fields, doc)))
+        
+        # CARB
+        logger.info("Reading CARB")
+        worksheet_name = 'CARB Current Air District Rule Data'
+        wanted_fields = ['Air District Name', 'Rules', 'Regulatory Text']
+        docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
+        for doc in docs:
+            transformed_result.append((transform_row(wanted_fields, doc)))
+                
         # Convert the list to JSON
         return json.dumps(transformed_result, indent=4)
 

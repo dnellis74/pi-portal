@@ -1,5 +1,6 @@
 import logging
 import boto3
+from bs4 import BeautifulSoup
 import scrapy
 import json
 import scrapy.utils
@@ -9,6 +10,7 @@ import magic
 from urllib.parse import urlparse
 import re
 import random  # For random delay
+from selenium_downloader import SeleniumDownloader
 
 class LegisSpider(scrapy.Spider):
     name = "legis"
@@ -34,6 +36,16 @@ class LegisSpider(scrapy.Spider):
     def __init__(self, legis_file=None, job_folder=None, log_file=None, *args, **kwargs):
         super(LegisSpider, self).__init__(*args, **kwargs)
         
+        # Initialize the S3 client
+        self.s3_client = boto3.client('s3')
+        
+        self.bucket_name = 'sbx-piai-docs'
+        self.mimeDetector = magic.Magic(mime=True)
+        self.job_folder = job_folder
+        
+        # Selenium
+        self.selenium = SeleniumDownloader(f"download/{self.job_folder}")
+        
         logging.getLogger().setLevel(logging.INFO)
         # Set logging level for boto3 and botocore
         logging.getLogger('boto3').setLevel(logging.INFO)
@@ -43,14 +55,7 @@ class LegisSpider(scrapy.Spider):
         logging.getLogger('urllib3').setLevel(logging.INFO)
         logging.getLogger('scrapy').setLevel(logging.INFO)
         logging.getLogger('scrapy').addHandler(logging.FileHandler(log_file))
-
-        
-        # Initialize the S3 client
-        self.s3_client = boto3.client('s3')
-        
-        self.bucket_name = 'sbx-piai-docs'
-        self.mimeDetector = magic.Magic(mime=True)
-        self.job_folder = job_folder
+        logging.getLogger('selenium.webdriver.remote.remote_connection').setLevel(logging.INFO)
 
         # Read the dictionary from the file
         try:
@@ -64,11 +69,20 @@ class LegisSpider(scrapy.Spider):
             for doc in self.docs:
                 url = doc['url']
                 if validators.url(url):
-                    yield scrapy.Request(url=url, callback=self.parse, meta={'name': doc['name'], 'state': doc['jurisdiction']})
+                    # Check if the link contains 'hylandcloud' (case insensitive)
+                    if 'hylandcloud' in url.lower():
+                        self.selenium.download_onbase_pdf(url)
+                        logging.info(f'filename: {url} downloaded with selenium')
+                    elif 'google' in url.lower():
+                        self.selenium.download_google_url(url)
+                        logging.info(f'filename: {url} downloaded with selenium')
+                    else:
+                        yield scrapy.Request(url=url, callback=self.parse, meta={'name': doc['name'], 'state': doc['jurisdiction']})                    
                 else:
                     self.logger.error(f'invalid url [{url}]')
         except Exception as e:
             self.logger.error(e)
+            
         
     def parse(self, response):
         try:
@@ -97,12 +111,11 @@ class LegisSpider(scrapy.Spider):
                 new_file_path = file_path + '.html'
 
             # Save the response body
-            self.write_response_to_s3(self.bucket_name, new_file_path, response)
+            self.write_response_to_s3(self.bucket_name, new_file_path, response.body)
 
             return {'url': response.url, 'status': response.status}
         except Exception as e:
             self.logger.error(f"Error processing {response.url}: {e}")
-
 
     def create_filename(self, name, jurisdiction):
         # Combine relevant fields to create a meaningful filename
@@ -114,9 +127,9 @@ class LegisSpider(scrapy.Spider):
     def mime_type(self, buffer):
         return self.mimeDetector.from_buffer(buffer)
     
-    def write_response_to_s3(self, bucket_name, object_name, response):
+    def write_response_to_s3(self, bucket_name, object_name, body):
         # Upload the data
-        self.s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=response.body)
+        self.s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=body)
         
     def read_from_s3(self, bucket_name, object_name):
         # Read the object from S3
