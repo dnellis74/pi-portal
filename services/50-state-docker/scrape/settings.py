@@ -93,3 +93,11 @@ TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
 LOG_LEVEL = 'INFO'
+
+DOWNLOADER_MIDDLEWARES = {
+    'scrape.middlewares.SeleniumDownload': 543,
+    # Add other middlewares here
+}
+
+# Directory where Selenium will download files
+SELENIUM_DOWNLOAD_DIR = 'download'

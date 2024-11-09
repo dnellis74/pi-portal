@@ -7,14 +7,9 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from scrape.spiders.legis_50_state import LegisSpider
 import json
+import os
 
-# Set up basic configuration
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-logger.info("Starting the application...")
-
-    # Set logging level for boto3 and botocore
+# Set logging level for boto3 and botocore
 logging.getLogger('boto3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 # Optional: Set logging level for specific AWS service-related modules (like s3transfer)
@@ -25,10 +20,10 @@ bucket_name = 'sbx-piai-docs'
 legis_file = '50_state_legis.json'
 log_file='scrape.log'
 
-def lambda_handler(event, context):
+def scraper():
     try:
         now = datetime.now()
-        job_folder = f'scrape/{now.year}-{now.month}-{now.day}_{now.hour}-{now.minute}-{now.second}'
+        job_folder = f'scrape/{now.year}-{str(now.month).zfill(2)}-{str(now.day).zfill(2)}_{str(now.hour).zfill(2)}-{str(now.minute).zfill(2)}-{str(now.second).zfill(2)}'
         ## Get urls from sheet and write them to file
         input_s3_key = f'{job_folder}/{legis_file}'
         
@@ -44,13 +39,20 @@ def lambda_handler(event, context):
         process.crawl(LegisSpider, legis_file=legis_file, job_folder=job_folder, log_file=log_file)
         # Start the crawling process (it will block here until the spider is done)
         process.start()
+        
+        # Upload all files in the local job folder to S3
+        for root, dirs, files in os.walk(job_folder):
+            for file in files:
+                local_file_path = os.path.join(root, file)
+                s3_file_path = os.path.relpath(local_file_path, job_folder)
+                s3_client.upload_file(local_file_path, bucket_name, s3_file_path + '/selenium')
+        
 
         #upload log to s3 for posterity
         s3_client.upload_file(log_file, bucket_name, f'{job_folder}/{log_file}')
     except Exception as e:
-        logger.exception(f'Error: {e}')
-        return 1
-        
+        logging.exception(f'Error: {e}')
+        return 1        
     return 0
 
 def gsheet_to_json():
@@ -64,16 +66,18 @@ def gsheet_to_json():
         transformed_result = []
         
         # Colorado guidance
-        logger.info("Reading Colorado guidance")        
-        sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
-        worksheet_name = 'support_docs'
-        wanted_fields = ['page_title', 'link_title', 'pdf_link']
-        docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
-        for doc in docs:
-            transformed_result.append((transform_row(wanted_fields, doc)))
+        guidance = True
+        if (guidance):
+            logging.info("Reading Colorado guidance")        
+            sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
+            worksheet_name = 'support_docs'
+            wanted_fields = ['page_title', 'link_title', 'pdf_link']
+            docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
+            for doc in docs:
+                transformed_result.append((transform_row(wanted_fields, doc)))
                 
         # 50 states
-        logger.info("Reading 50 state")
+        logging.info("Reading 50 state")
         sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
         worksheet_name = 'Individual doc links'
         wanted_fields = ['State', 'Regulation Name', 'Link']
@@ -82,7 +86,7 @@ def gsheet_to_json():
             transformed_result.append((transform_row(wanted_fields, doc)))
         
         # CARB
-        logger.info("Reading CARB")
+        logging.info("Reading CARB")
         worksheet_name = 'CARB Current Air District Rule Data'
         wanted_fields = ['Air District Name', 'Rules', 'Regulatory Text']
         docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
@@ -99,4 +103,4 @@ def get_sheet_url(sheet_id):
     return f'https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid=0'
 
 if __name__ == '__main__':
-    lambda_handler(None, None)
+    scraper()

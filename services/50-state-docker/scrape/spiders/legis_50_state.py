@@ -1,6 +1,5 @@
 import logging
 import boto3
-from bs4 import BeautifulSoup
 import scrapy
 import json
 import scrapy.utils
@@ -10,7 +9,6 @@ import magic
 from urllib.parse import urlparse
 import re
 import random  # For random delay
-from selenium_downloader import SeleniumDownloader
 
 class LegisSpider(scrapy.Spider):
     name = "legis"
@@ -43,9 +41,6 @@ class LegisSpider(scrapy.Spider):
         self.mimeDetector = magic.Magic(mime=True)
         self.job_folder = job_folder
         
-        # Selenium
-        self.selenium = SeleniumDownloader(f"download/{self.job_folder}")
-        
         logging.getLogger().setLevel(logging.INFO)
         # Set logging level for boto3 and botocore
         logging.getLogger('boto3').setLevel(logging.INFO)
@@ -67,24 +62,22 @@ class LegisSpider(scrapy.Spider):
         try:
             # Iterate over the dictionary and create requests for each URL
             for doc in self.docs:
+                if not doc['jurisdiction'].__contains__('Colorado'):
+                    continue
                 url = doc['url']
                 if validators.url(url):
-                    # Check if the link contains 'hylandcloud' (case insensitive)
-                    if 'hylandcloud' in url.lower():
-                        self.selenium.download_onbase_pdf(url)
-                        logging.info(f'filename: {url} downloaded with selenium')
-                    elif 'google' in url.lower():
-                        self.selenium.download_google_url(url)
-                        logging.info(f'filename: {url} downloaded with selenium')
-                    else:
-                        yield scrapy.Request(url=url, callback=self.parse, meta={'name': doc['name'], 'state': doc['jurisdiction']})                    
+                    yield scrapy.Request(
+                        url=url,
+                        callback=self.parse_file,
+                        meta={'name': doc['name'], 'state': doc['jurisdiction']}
+                    )                    
                 else:
                     self.logger.error(f'invalid url [{url}]')
         except Exception as e:
-            self.logger.error(e)
-            
+            self.logger.error(e)            
         
-    def parse(self, response):
+    def parse_file(self, response):
+        self.logger.info(f"Visited {response.url}")
         try:
             # Get document information from meta data
             leg_name = response.meta['name']
@@ -109,9 +102,14 @@ class LegisSpider(scrapy.Spider):
                 new_file_path = file_path + '.doc'
             elif not file_path.endswith('.html') and mime_type == 'text/html':
                 new_file_path = file_path + '.html'
+                
+            #Let's build metadata
+            metadata = {
+                'url': response.url
+            }
 
             # Save the response body
-            self.write_response_to_s3(self.bucket_name, new_file_path, response.body)
+            self.put_object(self.bucket_name, new_file_path, response.body, metadata)
 
             return {'url': response.url, 'status': response.status}
         except Exception as e:
@@ -127,9 +125,9 @@ class LegisSpider(scrapy.Spider):
     def mime_type(self, buffer):
         return self.mimeDetector.from_buffer(buffer)
     
-    def write_response_to_s3(self, bucket_name, object_name, body):
+    def put_object(self, bucket_name, object_name, body, metadata=None):
         # Upload the data
-        self.s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=body)
+        self.s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=body, Metadata=metadata)
         
     def read_from_s3(self, bucket_name, object_name):
         # Read the object from S3
