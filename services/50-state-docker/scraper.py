@@ -7,47 +7,53 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from scrape.spiders.legis_50_state import LegisSpider
 import json
-import os
-
-# Set logging level for boto3 and botocore
-logging.getLogger('boto3').setLevel(logging.INFO)
-logging.getLogger('botocore').setLevel(logging.INFO)
-# Optional: Set logging level for specific AWS service-related modules (like s3transfer)
-logging.getLogger('s3transfer').setLevel(logging.INFO)
-# Initialize the S3 client
-s3_client = boto3.client('s3')
-bucket_name = 'sbx-piai-docs'
-legis_file = '50_state_legis.json'
-log_file='scrape.log'
 
 def scraper():
+    log_file='scrape.log'
+    file_handler = logging.FileHandler(log_file, mode='w')
+    file_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logging.getLogger().addHandler(file_handler)
+    logging.getLogger().setLevel(logging.INFO)
+
+    logger = logging.getLogger(__name__)
+
+    # Set logging level for boto3 and botocore
+    logging.getLogger('boto3').setLevel(logging.INFO)
+    logging.getLogger('botocore').setLevel(logging.INFO)
+    
+    # Optional: Set logging level for specific AWS service-related modules (like s3transfer)
+    logging.getLogger('s3transfer').setLevel(logging.INFO)
+    logging.getLogger('urllib3').setLevel(logging.INFO)
+    logging.getLogger('scrapy').setLevel(logging.INFO)
+    
+    # Initialize the S3 client
+    s3_client = boto3.client('s3')
+    bucket_name = 'sbx-piai-docs'
+    legis_file = '50_state_legis.json'
+    
     try:
-        now = datetime.now()
-        job_folder = f'scrape/{now.year}-{str(now.month).zfill(2)}-{str(now.day).zfill(2)}_{str(now.hour).zfill(2)}-{str(now.minute).zfill(2)}-{str(now.second).zfill(2)}'
+        job_folder = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
         ## Get urls from sheet and write them to file
-        input_s3_key = f'{job_folder}/{legis_file}'
+        s3_object_key = f'{job_folder}/{legis_file}'
         
         json_data = gsheet_to_json()
-        s3_client.put_object(Bucket=bucket_name, Key=input_s3_key, Body=json_data)
-        logging.info(f"Data uploaded to '{bucket_name}/{input_s3_key}' successfully.")
+        s3_client.put_object(Bucket=bucket_name, Key=s3_object_key, Body=json_data)
+        logging.info(f"Data uploaded to '{bucket_name}/{s3_object_key}' successfully.")
                 
         ## Crawl and write 
         # Initialize a Scrapy CrawlerProcess with your project's settings
         settings = get_project_settings()
+            # Configure settings for concurrency
+        settings.set('JOB_FOLDER', job_folder)
+        settings.set('BUCKET_NAME', bucket_name)
         process = CrawlerProcess(settings)    
         # Schedule the spider to run
         process.crawl(LegisSpider, legis_file=legis_file, job_folder=job_folder, log_file=log_file)
         # Start the crawling process (it will block here until the spider is done)
         process.start()
         
-        # Upload all files in the local job folder to S3
-        for root, dirs, files in os.walk(job_folder):
-            for file in files:
-                local_file_path = os.path.join(root, file)
-                s3_file_path = os.path.relpath(local_file_path, job_folder)
-                s3_client.upload_file(local_file_path, bucket_name, s3_file_path + '/selenium')
-        
-
         #upload log to s3 for posterity
         s3_client.upload_file(log_file, bucket_name, f'{job_folder}/{log_file}')
     except Exception as e:
