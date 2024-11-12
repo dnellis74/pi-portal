@@ -3,10 +3,8 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
-
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-
 
 import boto3
 from botocore.exceptions import ClientError
@@ -59,7 +57,9 @@ class S3Upload:
                 Key=f'{self.job_folder}/{object_key}',
                 Body=item['content'],
                 Metadata={
-                    'SourceURL': item['url']
+                    'source_url': item['url'],
+                    'jusrisdiction': item['jurisdiction'],
+                    'title': item['title']
                 }
             )
             self.logger.info(f"Uploaded {item['url']} to S3 bucket {self.bucket_name} as {object_key}")

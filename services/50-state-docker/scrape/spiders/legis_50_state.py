@@ -42,7 +42,7 @@ class LegisSpider(scrapy.Spider):
                     yield scrapy.Request(
                         url=url,
                         callback=self.parse_file,
-                        meta={'name': doc['name'], 'state': doc['jurisdiction']}
+                        meta={'title': doc['title'], 'jurisdiction': doc['jurisdiction']}
                     )                    
                 else:
                     logging.error(f'invalid url [{url}]')
@@ -53,12 +53,12 @@ class LegisSpider(scrapy.Spider):
         logging.info(f"Visited {response.url}")
         try:
             # Get document information from meta data
-            leg_name = response.meta['name']
-            leg_jurisdiction = response.meta['state']
+            leg_title = response.meta['title']
+            leg_jurisdiction = response.meta['jurisdiction']
             leg_domain = response.meta['download_slot']
 
             # Generate a meaningful file name from the document information
-            base_filename = self.create_filename(leg_name, leg_jurisdiction)
+            base_filename = self.create_filename(leg_title, leg_jurisdiction)
 
             # Create the full file path with the new base filename
             file_path = os.path.join(leg_domain, base_filename)
@@ -75,15 +75,17 @@ class LegisSpider(scrapy.Spider):
 
             item = PageContentItem()
             item['url'] = response.url
-            item['content'] = response.body  # For raw HTML content
+            item['content'] = response.body  # raw content
             item['key'] = new_file_path
+            item['title'] = leg_title
+            item['jurisdiction'] = leg_jurisdiction
             yield item
         except Exception as e:
             logging.error(f"Error processing {response.url}: {e}")
 
-    def create_filename(self, name, jurisdiction):
+    def create_filename(self, title, jurisdiction):
         # Combine relevant fields to create a meaningful filename
-        filename = f"{jurisdiction}_{name}"
+        filename = f"{jurisdiction}_{title}"
         # Sanitize the filename by removing or replacing any illegal characters
         filename = re.sub(r'[\\/*?:"<>|]', "_", filename)
         return filename

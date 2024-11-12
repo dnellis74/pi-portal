@@ -77,7 +77,7 @@ def gsheet_to_json():
             logging.info("Reading Colorado guidance")        
             sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
             worksheet_name = 'support_docs'
-            wanted_fields = ['page_title', 'link_title', 'pdf_link']
+            wanted_fields = ['jurisdiction', 'link_title', 'pdf_link', 'page_title']
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
             for doc in docs:
                 transformed_result.append((transform_row(wanted_fields, doc)))
@@ -103,7 +103,7 @@ def gsheet_to_json():
         return json.dumps(transformed_result, indent=4)
 
 def transform_row(wanted_fields, doc):
-    return {'jurisdiction': doc[wanted_fields[0]], 'name': doc[wanted_fields[1]], 'url': doc[wanted_fields[2]]}
+    return {'jurisdiction': doc[wanted_fields[0]], 'title': doc[wanted_fields[1]], 'url': doc[wanted_fields[2]]}
     
 def get_sheet_url(sheet_id):
     return f'https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid=0'
