@@ -39,12 +39,12 @@ class S3Upload:
     
     def handle_result(self, result, item, spider):
         # This callback is called when the blocking operation completes successfully
-        self.logger.debug(f"Successfully uploaded item: {item['url']}")
+        self.logger.debug(f"Successfully uploaded item: {item['source_url']}")
         return result  # Pass the item to the next stage
 
     def handle_error(self, failure, item, spider):
         # This errback is called if the blocking operation raises an exception
-        self.logger.error(f"Error uploaded item: {item['url']}\nError: {failure}")
+        self.logger.error(f"Error uploaded item: {item['source_url']}\nError: {failure}")
         # Decide how to handle the error: retry, drop the item, etc.
         # For this example, we'll just pass the failure along
         return failure    
@@ -57,20 +57,19 @@ class S3Upload:
                 Key=f'{self.job_folder}/{object_key}',
                 Body=item['content'],
                 Metadata={
-                    'source_url': item['url'],
-                    'jusrisdiction': item['jurisdiction'],
+                    'source_url': item['source_url'],
+                    'jurisdiction': item['jurisdiction'],
                     'title': item['title']
                 }
             )
-            self.logger.info(f"Uploaded {item['url']} to S3 bucket {self.bucket_name} as {object_key}")
+            self.logger.info(f"Uploaded {item['source_url']} to S3 bucket {self.bucket_name} as {object_key}")
         except ClientError as e:
-            self.logger.error(f"Failed to upload {item['url']} to S3: {e}")
-            raise e
+            self.logger.error(f"Failed to upload {item['source_url']} to S3: {str(e)}")
         return item
 
     def get_object_key(self, item):
         # Use URL path as object key, defaulting to 'index.html' if necessary
-        parsed_url = urlparse(item['url'])
+        parsed_url = urlparse(item['source_url'])
         path = parsed_url.path.lstrip('/')
         if not path or path.endswith('/'):
             path += 'index.html'

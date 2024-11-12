@@ -35,8 +35,8 @@ class LegisSpider(scrapy.Spider):
         try:
             # Iterate over the dictionary and create requests for each URL
             for doc in self.docs:
-                if not doc['jurisdiction'].__contains__('Colorado'):
-                    continue
+                #if not doc['jurisdiction'].__contains__('Colorado'):
+                #    continue
                 url = doc['url']
                 if validators.url(url):
                     yield scrapy.Request(
@@ -74,7 +74,7 @@ class LegisSpider(scrapy.Spider):
                 new_file_path = file_path + '.html'
 
             item = PageContentItem()
-            item['url'] = response.url
+            item['source_url'] = response.url
             item['content'] = response.body  # raw content
             item['key'] = new_file_path
             item['title'] = leg_title
