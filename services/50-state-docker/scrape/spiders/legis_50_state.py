@@ -8,16 +8,16 @@ import os
 import magic
 from urllib.parse import urlparse
 import re
-import random
 
 from items import PageContentItem  # For random delay
 
 class LegisSpider(scrapy.Spider):
     name = "legis"
 
-    def __init__(self, legis_file=None, job_folder=None, log_file=None, *args, **kwargs):
+    def __init__(self, legis_file=None, job_folder=None, *args, **kwargs):
         super(LegisSpider, self).__init__(*args, **kwargs)
-        
+        self.parent_logger = logging.getLogger('scraper')
+
         # Initialize the S3 client
         self.s3_client = boto3.client('s3')
         
@@ -45,12 +45,12 @@ class LegisSpider(scrapy.Spider):
                         meta={'title': doc['title'], 'jurisdiction': doc['jurisdiction']}
                     )                    
                 else:
-                    logging.error(f'invalid url [{url}]')
+                    self.parent_logger.error(f'invalid url [{url}]')
         except Exception as e:
-            logging.error(e)            
+            self.parent_logger.error(e)            
         
     def parse_file(self, response):
-        logging.info(f"Visited {response.url}")
+        self.parent_logger.info(f"Visited {response.url}")
         try:
             # Get document information from meta data
             leg_title = response.meta['title']

@@ -97,5 +97,8 @@ FEED_EXPORT_ENCODING = "utf-8"
 SELENIUM_DOWNLOAD_DIR = 'download'
 
 # Set logging to monitor performance
-LOG_LEVEL = 'INFO'
+LOG_ENABLED = True
+LOG_STDOUT = True
+LOG_LEVEL = "INFO"
+LOG_FILE = None  # Ensure Scrapy doesn’t log to its own file
 STATS_DUMP = True

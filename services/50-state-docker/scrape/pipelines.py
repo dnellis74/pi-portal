@@ -4,6 +4,7 @@
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
 # useful for handling different item types with a single interface
+import json
 from itemadapter import ItemAdapter
 
 import boto3
@@ -12,9 +13,11 @@ import logging
 from urllib.parse import urlparse
 from twisted.internet import threads
 
+from s3_sanitize import sanitize_metadata, sanitize_s3_key
+
 class S3Upload:
     def __init__(self, bucket_name, job_folder):
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('scraper')
         self.bucket_name = bucket_name
         self.job_folder = job_folder
         self.s3_client = boto3.client('s3')
@@ -50,19 +53,29 @@ class S3Upload:
         return failure    
 
     def s3_put_synch(self, item):
-        object_key = item['key']
+        sanitized_key = sanitize_s3_key(item['key'])
+        attributes = sanitize_metadata({
+            '_source_uri': item['source_url'],
+            'jurisdiction': item['jurisdiction'],
+            '_document_title': item['title']
+        })
+        sanitized_metadata = {
+            'Attributes': attributes
+        }
+        json_str = json.dumps(sanitized_metadata, indent=2)
+        utf8_encoded_json = json_str.encode('utf-8')
         try:
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
-                Key=f'{self.job_folder}/{object_key}',
+                Key=f'{self.job_folder}/{sanitized_key}',
                 Body=item['content'],
-                Metadata={
-                    'source_url': item['source_url'],
-                    'jurisdiction': item['jurisdiction'],
-                    'title': item['title']
-                }
             )
-            self.logger.info(f"Uploaded {item['source_url']} to S3 bucket {self.bucket_name} as {object_key}")
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=f'{self.job_folder}/{sanitized_key}.metadata.json',
+                Body=utf8_encoded_json,                
+            )
+            self.logger.info(f"Uploaded {item['source_url']} to S3 bucket {self.bucket_name} as {sanitized_key}")
         except ClientError as e:
             self.logger.error(f"Failed to upload {item['source_url']} to S3: {str(e)}")
         return item
@@ -75,3 +88,5 @@ class S3Upload:
             path += 'index.html'
         object_key = path
         return object_key
+    
+    

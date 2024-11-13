@@ -5,20 +5,11 @@ import logging
 from gspread_array_map import GsheetArrayMap
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
+from scrapy.utils.log import configure_logging
 from scrape.spiders.legis_50_state import LegisSpider
 import json
 
 def scraper():
-    log_file='scrape.log'
-    file_handler = logging.FileHandler(log_file, mode='w')
-    file_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    logging.getLogger().addHandler(file_handler)
-    logging.getLogger().setLevel(logging.INFO)
-
-    logger = logging.getLogger(__name__)
-
     # Set logging level for boto3 and botocore
     logging.getLogger('boto3').setLevel(logging.INFO)
     logging.getLogger('botocore').setLevel(logging.INFO)
@@ -26,7 +17,47 @@ def scraper():
     # Optional: Set logging level for specific AWS service-related modules (like s3transfer)
     logging.getLogger('s3transfer').setLevel(logging.INFO)
     logging.getLogger('urllib3').setLevel(logging.INFO)
-    logging.getLogger('scrapy').setLevel(logging.INFO)
+    
+    # Create the logger
+    logger_name = 'scraper'
+    log_file = 'scraper.log'
+    
+    # Truncate the log file at startup
+    with open(log_file, "w"):
+        pass  # Open the file in write mode to clear its contents
+    
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.INFO)
+
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+
+    # File handler
+    ## Everything breaks in "w" mode.  For now, a only
+    file_handler = logging.FileHandler(log_file, mode='a')  # Change to 'a' if you want to append
+    file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
+    
+    # Disable propagation to prevent the root logger from logging again
+    logger.propagate = False
+
+    # Test logging
+    logger.info("This is an info message")
+    logger.error("This is an error message")
+    
+    # Disable Scrapy's default logging configuration
+    configure_logging(install_root_handler=False)
+
+    # Use the custom logger for Scrapy and direct all logs to both handlers
+    scrapy_settings = get_project_settings()
+    scrapy_settings.LOGGING = None  # Disable Scrapy's internal logging config
+    scrapy_settings.LOG_ENABLED = True
+    scrapy_settings.LOG_LEVEL = "INFO"
+    scrapy_settings.LOG_STDOUT = True
     
     # Initialize the S3 client
     s3_client = boto3.client('s3')
@@ -40,28 +71,30 @@ def scraper():
         
         json_data = gsheet_to_json()
         s3_client.put_object(Bucket=bucket_name, Key=s3_object_key, Body=json_data)
-        logging.info(f"Data uploaded to '{bucket_name}/{s3_object_key}' successfully.")
+        logger.info(f"Data uploaded to '{bucket_name}/{s3_object_key}' successfully.")
                 
         ## Crawl and write 
         # Initialize a Scrapy CrawlerProcess with your project's settings
-        settings = get_project_settings()
-            # Configure settings for concurrency
-        settings.set('JOB_FOLDER', job_folder)
-        settings.set('BUCKET_NAME', bucket_name)
-        process = CrawlerProcess(settings)    
+       
+        # Configure settings for concurrency
+        scrapy_settings.set('JOB_FOLDER', job_folder)
+        scrapy_settings.set('BUCKET_NAME', bucket_name)
+        process = CrawlerProcess(scrapy_settings)    
         # Schedule the spider to run
-        process.crawl(LegisSpider, legis_file=legis_file, job_folder=job_folder, log_file=log_file)
+        process.crawl(LegisSpider, legis_file=legis_file, job_folder=job_folder)
         # Start the crawling process (it will block here until the spider is done)
         process.start()
         
         #upload log to s3 for posterity
         s3_client.upload_file(log_file, bucket_name, f'{job_folder}/{log_file}')
     except Exception as e:
-        logging.exception(f'Error: {e}')
+        logger.exception(f'Error: {e}')
         return 1        
     return 0
 
 def gsheet_to_json():
+        logger = logging.getLogger('scraper')
+
         # Path to your service account credentials JSON file
         creds_file = './sbx-kendra-8e724bd9a0ce.json'
 
@@ -74,7 +107,7 @@ def gsheet_to_json():
         # Colorado guidance
         guidance = True
         if (guidance):
-            logging.info("Reading Colorado guidance")        
+            logger.info("Reading Colorado guidance")        
             sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
             worksheet_name = 'support_docs'
             wanted_fields = ['jurisdiction', 'link_title', 'pdf_link', 'page_title']
@@ -83,7 +116,7 @@ def gsheet_to_json():
                 transformed_result.append((transform_row(wanted_fields, doc)))
                 
         # 50 states
-        logging.info("Reading 50 state")
+        logger.info("Reading 50 state")
         sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
         worksheet_name = 'Individual doc links'
         wanted_fields = ['State', 'Regulation Name', 'Link']
@@ -92,7 +125,7 @@ def gsheet_to_json():
             transformed_result.append((transform_row(wanted_fields, doc)))
         
         # CARB
-        logging.info("Reading CARB")
+        logger.info("Reading CARB")
         worksheet_name = 'CARB Current Air District Rule Data'
         wanted_fields = ['Air District Name', 'Rules', 'Regulatory Text']
         docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 

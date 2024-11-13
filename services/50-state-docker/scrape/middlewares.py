@@ -23,7 +23,7 @@ from twisted.internet import threads
 
 class SeleniumDownload:
     def __init__(self, download_dir):
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('scraper')
         logging.getLogger('selenium.webdriver.remote.remote_connection').setLevel(logging.INFO)
 
         self.download_dir = download_dir
@@ -106,13 +106,17 @@ class SeleniumDownload:
                     status=500,
                     request=request
                 )
+        except Exception as e:
+            logging.error(f"Error in Selenium middleware: {str(e)}")
+            return HtmlResponse(
+                    url=request.url,
+                    status=500,
+                    request=request
+                )
         finally:
             # remove the file after processing
-            shutil.rmtree(unique_download_dir)
-        
+            shutil.rmtree(unique_download_dir)        
             self.logger.info(f"Completing {request.url} with Selenium for file download")
-
-            # self.driver.quit()
                     
     def google_click_button(self):
         download_button = WebDriverWait(self.driver, 15).until(
