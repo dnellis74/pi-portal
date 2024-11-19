@@ -57,7 +57,10 @@ class S3Upload:
         attributes = sanitize_metadata({
             '_source_uri': item['source_url'],
             'jurisdiction': item['jurisdiction'],
-            '_document_title': item['title']
+            '_document_title': item['title'],
+            'aq_type': item['doc_type'],
+            'tombstone': item['tombstone'],
+            'language': item['language']
         })
         sanitized_metadata = {
             'Attributes': attributes

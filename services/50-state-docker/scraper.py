@@ -110,33 +110,35 @@ def gsheet_to_json():
             logger.info("Reading Colorado guidance")        
             sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
             worksheet_name = 'support_docs'
-            wanted_fields = ['jurisdiction', 'link_title', 'pdf_link', 'page_title']
+            wanted_fields = ['jurisdiction', 'link_title', 'pdf_link', 'page_title', 'doc_type', 'tombstone', 'language']
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
             for doc in docs:
                 transformed_result.append((transform_row(wanted_fields, doc)))
                 
         # 50 states
-        logger.info("Reading 50 state")
-        sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
-        worksheet_name = 'Individual doc links'
-        wanted_fields = ['State', 'Regulation Name', 'Link']
-        docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
-        for doc in docs:
-            transformed_result.append((transform_row(wanted_fields, doc)))
-        
-        # CARB
-        logger.info("Reading CARB")
-        worksheet_name = 'CARB Current Air District Rule Data'
-        wanted_fields = ['Air District Name', 'Rules', 'Regulatory Text']
-        docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
-        for doc in docs:
-            transformed_result.append((transform_row(wanted_fields, doc)))
+        FiddyState = False
+        if FiddyState:
+            logger.info("Reading 50 state")
+            sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
+            worksheet_name = 'Individual doc links'
+            wanted_fields = ['State', 'Regulation Name', 'Link']
+            docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
+            for doc in docs:
+                transformed_result.append((transform_row(wanted_fields, doc)))
+            
+            # CARB
+            logger.info("Reading CARB")
+            worksheet_name = 'CARB Current Air District Rule Data'
+            wanted_fields = ['Air District Name', 'Rules', 'Regulatory Text']
+            docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
+            for doc in docs:
+                transformed_result.append((transform_row(wanted_fields, doc)))
                 
         # Convert the list to JSON
         return json.dumps(transformed_result, indent=4)
 
 def transform_row(wanted_fields, doc):
-    return {'jurisdiction': doc[wanted_fields[0]], 'title': doc[wanted_fields[1]], 'url': doc[wanted_fields[2]]}
+    return {'jurisdiction': doc[wanted_fields[0]], 'title': doc[wanted_fields[1]], 'url': doc[wanted_fields[2]], 'doc_type': doc[wanted_fields[4]], 'tombstone': doc[wanted_fields[5]], 'language': doc[wanted_fields[6]]}
     
 def get_sheet_url(sheet_id):
     return f'https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid=0'

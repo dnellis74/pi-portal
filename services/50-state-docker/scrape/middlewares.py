@@ -19,7 +19,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from twisted.internet import threads
+from selenium.common.exceptions import TimeoutException
 
 class SeleniumDownload:
     def __init__(self, download_dir):
@@ -98,25 +98,33 @@ class SeleniumDownload:
                     request=request
                 )
                 response.meta['download_slot'] = urlparse(request.url).netloc
+                self.logger.info(f"Completing {request.url} with Selenium for file download")
                 return response
             else:
-                logging.error(f"Failed to download file from {request.url}")
+                logging.warning(f"Failed to download file from {request.url}")
                 return HtmlResponse(
                     url=request.url,
                     status=500,
                     request=request
                 )
+        except TimeoutException as e:
+            self.logger.warning(f"Timeout while waiting for download from {request.url}")
+            return HtmlResponse(
+                url=request.url,
+                status=504,
+                request=request
+            )
         except Exception as e:
-            logging.error(f"Error in Selenium middleware: {str(e)}")
+            self.logger.warning(f"Failed to download file from {request.url}")
+            self.logger.error("An error occurred: %s", e, exc_info=True)
             return HtmlResponse(
                     url=request.url,
-                    status=500,
+                    status=400,
                     request=request
                 )
         finally:
             # remove the file after processing
             shutil.rmtree(unique_download_dir)        
-            self.logger.info(f"Completing {request.url} with Selenium for file download")
                     
     def google_click_button(self):
         download_button = WebDriverWait(self.driver, 15).until(
@@ -155,5 +163,5 @@ class SeleniumDownload:
         return None
 
     def spider_closed(self):
-        self.logger.info("Closing Selenium WebDriver")
+        self.logger.debug("Closing Selenium WebDriver")
         self.driver.quit()

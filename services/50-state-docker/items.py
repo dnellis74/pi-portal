@@ -5,4 +5,7 @@ class PageContentItem(scrapy.Item):
     content = scrapy.Field()
     key = scrapy.Field()
     title = scrapy.Field()
-    jurisdiction = scrapy.Field() 
+    jurisdiction = scrapy.Field()
+    doc_type = scrapy.Field()
+    tombstone = scrapy.Field()
+    language = scrapy.Field()

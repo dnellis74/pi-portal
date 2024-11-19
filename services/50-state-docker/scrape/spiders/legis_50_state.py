@@ -42,7 +42,13 @@ class LegisSpider(scrapy.Spider):
                     yield scrapy.Request(
                         url=url,
                         callback=self.parse_file,
-                        meta={'title': doc['title'], 'jurisdiction': doc['jurisdiction']}
+                        meta={
+                            'title': doc['title'],
+                            'jurisdiction': doc['jurisdiction'],
+                            'doc_type': doc['doc_type'],
+                            'tombstone': doc['tombstone'],
+                            'language': doc['language']
+                        }
                     )                    
                 else:
                     self.parent_logger.error(f'invalid url [{url}]')
@@ -56,6 +62,9 @@ class LegisSpider(scrapy.Spider):
             leg_title = response.meta['title']
             leg_jurisdiction = response.meta['jurisdiction']
             leg_domain = response.meta['download_slot']
+            doc_type = response.meta['doc_type']
+            tombstone = response.meta['tombstone']
+            language = response.meta['language']
 
             # Generate a meaningful file name from the document information
             base_filename = self.create_filename(leg_title, leg_jurisdiction)
@@ -79,6 +88,9 @@ class LegisSpider(scrapy.Spider):
             item['key'] = new_file_path
             item['title'] = leg_title
             item['jurisdiction'] = leg_jurisdiction
+            item['doc_type'] = doc_type
+            item['tombstone'] = tombstone
+            item['language'] = language
             yield item
         except Exception as e:
             logging.error(f"Error processing {response.url}: {e}")
