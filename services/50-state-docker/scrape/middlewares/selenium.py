@@ -52,7 +52,7 @@ class SeleniumDownload:
     def process_request(self, request, spider):
         # Define the URL patterns that need Selenium for PDF downloads
         pdf_url_patterns = [
-            r'google',
+            r'drive.google.com/file',
             r'hylandcloud',
         ]
 

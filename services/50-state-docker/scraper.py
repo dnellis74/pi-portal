@@ -85,7 +85,7 @@ def scraper():
         # Start the crawling process (it will block here until the spider is done)
         process.start()
         
-        #upload log to s3 for posterity
+        # upload log to s3 for posterity
         s3_client.upload_file(log_file, bucket_name, f'{job_folder}/{log_file}')
     except Exception as e:
         logger.exception(f'Error: {e}')

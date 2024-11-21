@@ -51,7 +51,8 @@ CONCURRENT_REQUESTS_PER_IP = 2
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    'scrape.middlewares.SeleniumDownload': 543,
+    'scrape.middlewares.selenium.SeleniumDownload': 543,
+    'scrape.middlewares.google.GoogleDriveMiddleware': 544,
     # Add other middlewares here
 }
 
@@ -102,3 +103,5 @@ LOG_STDOUT = True
 LOG_LEVEL = "INFO"
 LOG_FILE = None  # Ensure Scrapy doesn’t log to its own file
 STATS_DUMP = True
+
+GOOGLE_DRIVE_CREDENTIALS_FILE = './sbx-kendra-8e724bd9a0ce.json'
