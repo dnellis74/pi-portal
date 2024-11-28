@@ -13,6 +13,7 @@ import logging
 from urllib.parse import urlparse
 from twisted.internet import threads
 
+from items import PageContentItem
 from s3_sanitize import sanitize_metadata, sanitize_s3_key
 
 class S3Upload:
@@ -50,14 +51,28 @@ class S3Upload:
         self.logger.error(f"Error uploaded item: {item['source_url']}\nError: {failure}")
         # Decide how to handle the error: retry, drop the item, etc.
         # For this example, we'll just pass the failure along
-        return failure    
+        return failure
+    
+    def get_extension(self, mime_type):
+        if mime_type == 'application/msword':
+            return 'doc'
+        elif mime_type == 'text/html':
+            return 'html'
+        else:
+            return 'pdf'
 
-    def s3_put_synch(self, item):
-        sanitized_key = sanitize_s3_key(item['key'])
+    def s3_put_synch(self, item:PageContentItem):
+        composite_title = item['jurisdiction'] + " - " + item['title']
+        if item['description'] != '':
+            composite_title += " - " + item['description']
+        sanitized_key = sanitize_s3_key(f"{item['jurisdiction']}/{composite_title}.{self.get_extension(item['mime_type'])}")
         attributes = sanitize_metadata({
             '_source_uri': item['source_url'],
+            'pi_url': item['pi_url'],
             'jurisdiction': item['jurisdiction'],
-            '_document_title': item['title'],
+            'title': item['title'],
+            'description': item['description'],
+            '_document_title': composite_title,
             'aq_type': item['doc_type'],
             'tombstone': item['tombstone'],
             'language': item['language']
@@ -72,6 +87,7 @@ class S3Upload:
                 Bucket=self.bucket_name,
                 Key=f'{self.job_folder}/{sanitized_key}',
                 Body=item['content'],
+                #ContentType=item['mime_type']
             )
             self.s3_client.put_object(
                 Bucket=self.bucket_name,

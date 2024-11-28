@@ -102,10 +102,10 @@ def gsheet_to_json():
         # Instantiate the GspreadArrayMap class
         gspread_map = GsheetArrayMap(creds_file)
         # Retrieve data
-        transformed_result = []
+        normalized_result = []
         
         # Colorado guidance
-        guidance = True
+        guidance = False
         if (guidance):
             logger.info("Reading Colorado guidance")        
             sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
@@ -113,35 +113,58 @@ def gsheet_to_json():
             wanted_fields = ['jurisdiction', 'link_title', 'pdf_link', 'page_title', 'doc_type', 'tombstone', 'language']
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
             for doc in docs:
-                transformed_result.append((transform_row(wanted_fields, doc)))
+                normalized = {
+                    'jurisdiction': doc[wanted_fields[0]],
+                    'title': doc[wanted_fields[1]],
+                    'url': doc[wanted_fields[2]],
+                    'doc_type': doc[wanted_fields[3]],
+                    'tombstone': doc[wanted_fields[4]],
+                    'language': doc[wanted_fields[5]]
+                }
+                normalized_result.append((normalized(wanted_fields, doc)))
                 
         # 50 states
-        FiddyState = False
+        FiddyState = True
         if FiddyState:
             logger.info("Reading 50 state")
             sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
             worksheet_name = 'Individual doc links'
-            wanted_fields = ['State', 'Regulation Name', 'Link']
+            wanted_fields = ['State', 'Regulation Name', 'Description', 'Link']
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
             for doc in docs:
-                transformed_result.append((transform_row(wanted_fields, doc)))
-            
-            # CARB
+                if jurisdiction_filter(doc[wanted_fields[0]]):
+                    normalized_result.append((normalize(wanted_fields, doc)))
+
+        # CARB            
+        carb = False
+        if carb:
+            logger.info("Reading CARB")
+            sheet_url = get_sheet_url('1nX9KgKZQZqZcJ6t8q2F6jDmRQV9mL7Q3aF3YXjKQgY')
             logger.info("Reading CARB")
             worksheet_name = 'CARB Current Air District Rule Data'
             wanted_fields = ['Air District Name', 'Rules', 'Regulatory Text']
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
             for doc in docs:
-                transformed_result.append((transform_row(wanted_fields, doc)))
+                normalized_result.append((normalize(wanted_fields, doc)))
                 
         # Convert the list to JSON
-        return json.dumps(transformed_result, indent=4)
+        return json.dumps(normalized_result, indent=4)
 
-def transform_row(wanted_fields, doc):
-    return {'jurisdiction': doc[wanted_fields[0]], 'title': doc[wanted_fields[1]], 'url': doc[wanted_fields[2]], 'doc_type': doc[wanted_fields[4]], 'tombstone': doc[wanted_fields[5]], 'language': doc[wanted_fields[6]]}
+def normalize(wanted_fields, doc):
+    return {
+        'jurisdiction': doc[wanted_fields[0]],
+        'title': doc[wanted_fields[1]],
+        'description': doc[wanted_fields[2]],
+        'url': doc[wanted_fields[3]],
+        'doc_type': 'Regulation'
+    }
     
 def get_sheet_url(sheet_id):
     return f'https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid=0'
 
+def jurisdiction_filter(jurisdiction):
+    if jurisdiction != 'North Dakota':
+        return False
+    return True
 if __name__ == '__main__':
     scraper()

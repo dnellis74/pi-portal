@@ -10,10 +10,10 @@ import shutil
 import time
 import logging
 import re
-from urllib.parse import urlparse
 from uuid import uuid4
-from scrapy.http import HtmlResponse
 from scrapy import signals
+import scrapy
+from scrapy.http import Response
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
@@ -23,11 +23,34 @@ from selenium.common.exceptions import TimeoutException
 
 class SeleniumDownload:
     def __init__(self, download_dir):
-        self.logger = logging.getLogger('scraper')
+        self.logger = logging.getLogger(self.__class__.__name__)
         logging.getLogger('selenium.webdriver.remote.remote_connection').setLevel(logging.INFO)
-
         self.download_dir = download_dir
 
+    @classmethod
+    def from_crawler(cls, crawler):
+        # Get the download directory from settings or set a default one
+        download_dir = crawler.settings.get('SELENIUM_DOWNLOAD_DIR', '/tmp')
+        middleware = cls(download_dir)
+        crawler.signals.connect(middleware.spider_closed, signals.spider_closed)
+        return middleware
+
+    def process_request(self, request:scrapy.Request, spider):
+        # Define the URL patterns that need Selenium for PDF downloads
+        pdf_url_patterns = [
+            r'hylandcloud',
+        ]
+
+        # Check if the request URL matches any of the patterns
+        for pattern in pdf_url_patterns:
+            if re.search(pattern, request.url):
+                self.logger.info(f"Starting {request.url} with Selenium for file download")
+                return self.selenium_download(request, pattern)
+        # If no pattern matches, let Scrapy handle the request
+        return None
+    
+    def selenium_download(self, request:scrapy.Request, pattern):
+        #Setup the browser
         chrome_options = Options()
         chrome_options.add_argument('--headless')
         prefs = {
@@ -39,33 +62,8 @@ class SeleniumDownload:
             "profile.default_content_setting_values.automatic_downloads": 1
         }
         chrome_options.add_experimental_option("prefs", prefs)
-        self.driver = webdriver.Chrome(options=chrome_options)
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        # Get the download directory from settings or set a default one
-        download_dir = crawler.settings.get('SELENIUM_DOWNLOAD_DIR', '/tmp')
-        middleware = cls(download_dir)
-        crawler.signals.connect(middleware.spider_closed, signals.spider_closed)
-        return middleware
-
-    def process_request(self, request, spider):
-        # Define the URL patterns that need Selenium for PDF downloads
-        pdf_url_patterns = [
-            r'drive.google.com/file',
-            r'hylandcloud',
-        ]
-
-        # Check if the request URL matches any of the patterns
-        for pattern in pdf_url_patterns:
-            if re.search(pattern, request.url):
-                self.logger.info(f"Starting {request.url} with Selenium for file download")
-                # return threads.deferToThread(self.selenium_download, request, pattern)
-                return self.selenium_download(request, pattern)
-        # If no pattern matches, let Scrapy handle the request
-        return None
-    
-    def selenium_download(self, request, pattern):
+        self.driver= webdriver.Chrome(options=chrome_options)
+        
         # Generate a unique download directory for each request
         unique_id = str(uuid4())
         unique_download_dir = os.path.join(self.download_dir, unique_id)
@@ -80,9 +78,7 @@ class SeleniumDownload:
             self.driver.get(request.url)
             
             # These methods wait for the right button to be active, and then start the download
-            if pattern == r'google':
-                self.google_click_button()
-            elif pattern == r'hylandcloud':
+            if pattern == r'hylandcloud':
                 self.onbase_click_button()
 
             # Wait for the download to complete
@@ -91,25 +87,24 @@ class SeleniumDownload:
             if downloaded_file_path:
                 with open(downloaded_file_path, 'rb') as f:
                     file_data = f.read()
-                response = HtmlResponse(
+                response = Response(
                     url=request.url,
                     body=file_data,
-                    encoding='utf-8',
                     request=request
                 )
-                response.meta['download_slot'] = urlparse(request.url).netloc
                 self.logger.info(f"Completing {request.url} with Selenium for file download")
+                self.driver.quit()
                 return response
             else:
                 logging.warning(f"Failed to download file from {request.url}")
-                return HtmlResponse(
+                return Response(
                     url=request.url,
                     status=500,
                     request=request
                 )
         except TimeoutException as e:
             self.logger.warning(f"Timeout while waiting for download from {request.url}")
-            return HtmlResponse(
+            return Response(
                 url=request.url,
                 status=504,
                 request=request
@@ -117,20 +112,14 @@ class SeleniumDownload:
         except Exception as e:
             self.logger.warning(f"Failed to download file from {request.url}")
             self.logger.error("An error occurred: %s", e, exc_info=True)
-            return HtmlResponse(
+            return Response(
                     url=request.url,
                     status=400,
                     request=request
                 )
         finally:
             # remove the file after processing
-            shutil.rmtree(unique_download_dir)        
-                    
-    def google_click_button(self):
-        download_button = WebDriverWait(self.driver, 15).until(
-                        EC.element_to_be_clickable((By.XPATH, "//div[@data-tooltip='Download']"))
-                    )
-        download_button.click()
+            shutil.rmtree(unique_download_dir)                        
         
     def onbase_click_button(self):
         # Wait for the PDF to load and switch to proper frame
