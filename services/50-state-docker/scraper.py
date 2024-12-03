@@ -105,26 +105,22 @@ def gsheet_to_json():
         normalized_result = []
         
         # Colorado guidance
-        guidance = False
+        guidance = True
         if (guidance):
             logger.info("Reading Colorado guidance")        
             sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
             worksheet_name = 'support_docs'
-            wanted_fields = ['jurisdiction', 'link_title', 'pdf_link', 'page_title', 'doc_type', 'tombstone', 'language']
+            wanted_fields = ['jurisdiction', 'page_title', 'link_title', 'pdf_link', 'doc_type', 'tombstone', 'language']        
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
-            for doc in docs:
-                normalized = {
-                    'jurisdiction': doc[wanted_fields[0]],
-                    'title': doc[wanted_fields[1]],
-                    'url': doc[wanted_fields[2]],
-                    'doc_type': doc[wanted_fields[3]],
-                    'tombstone': doc[wanted_fields[4]],
-                    'language': doc[wanted_fields[5]]
-                }
-                normalized_result.append((normalized(wanted_fields, doc)))
+            current_doc = 2
+            start_doc = 2 # set to start doc in guidance sheet
+            for doc in docs:       
+                if (current_doc >= start_doc):
+                    normalized_result.append((normalize(wanted_fields, doc)))
+                current_doc += 1
                 
         # 50 states
-        FiddyState = True
+        FiddyState = False
         if FiddyState:
             logger.info("Reading 50 state")
             sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
@@ -156,7 +152,9 @@ def normalize(wanted_fields, doc):
         'title': doc[wanted_fields[1]],
         'description': doc[wanted_fields[2]],
         'url': doc[wanted_fields[3]],
-        'doc_type': 'Regulation'
+        'doc_type': doc[wanted_fields[4]],
+        'tombstone': doc[wanted_fields[5]],
+        'language': doc[wanted_fields[6]]
     }
     
 def get_sheet_url(sheet_id):
