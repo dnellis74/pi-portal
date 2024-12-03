@@ -163,7 +163,7 @@ def get_sheet_url(sheet_id):
     return f'https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid=0'
 
 def jurisdiction_filter(jurisdiction):
-    if jurisdiction != 'North Dakota':
+    if jurisdiction != 'California (SCAQMD)':
         return False
     return True
 if __name__ == '__main__':
