@@ -16,9 +16,9 @@ from twisted.internet import threads
 from items import PageContentItem
 from s3_sanitize import sanitize_metadata, sanitize_s3_key
 
-class S3Upload:
+class S3Upload_Pipeline:
     def __init__(self, bucket_name, job_folder):
-        self.logger = logging.getLogger('scraper')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.bucket_name = bucket_name
         self.job_folder = job_folder
         self.s3_client = boto3.client('s3')
@@ -65,7 +65,10 @@ class S3Upload:
         composite_title = item['jurisdiction'] + " - " + item['title']
         if item['description'] != '':
             composite_title += " - " + item['description']
-        sanitized_key = sanitize_s3_key(f"{item['jurisdiction']}/{composite_title}.{self.get_extension(item['mime_type'])}")
+        # Create the key in steps because of forward slashes are both wanted, AND unwanted
+        sanitized_title = sanitize_s3_key(f"{composite_title}.{self.get_extension(item['mime_type'])}")
+        sanitized_jurisdiction = sanitize_s3_key(f"{item['jurisdiction']}")
+        sanitized_key = f"{self.job_folder}/{sanitized_jurisdiction}/{sanitized_title}"
         attributes = sanitize_metadata({
             '_source_uri': item['source_url'],
             'pi_url': item['pi_url'],
@@ -81,18 +84,17 @@ class S3Upload:
             'Attributes': attributes
         }
         json_str = json.dumps(sanitized_metadata, indent=2)
-        utf8_encoded_json = json_str.encode('utf-8')
+        metadata_utf8_json = json_str.encode('utf-8')
         try:
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
-                Key=f'{self.job_folder}/{sanitized_key}',
+                Key=sanitized_key,
                 Body=item['content'],
-                #ContentType=item['mime_type']
             )
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
-                Key=f'{self.job_folder}/{sanitized_key}.metadata.json',
-                Body=utf8_encoded_json,                
+                Key=f'{sanitized_key}.metadata.json',
+                Body=metadata_utf8_json,                
             )
             self.logger.info(f"Uploaded {item['source_url']} to S3 bucket {self.bucket_name} as {sanitized_key}")
         except ClientError as e:

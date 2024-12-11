@@ -6,7 +6,7 @@ def sanitize_s3_key(key: str) -> str:
     Allowed characters are mostly printable ASCII characters.
     """
     # Replace invalid characters with underscores
-    sanitized_key = re.sub(r'[^a-zA-Z0-9!_.*\'()/\-]', '_', key)
+    sanitized_key = re.sub(r'[^a-zA-Z0-9!_.*\'()\-]', '_', key)
     
     # Optional: If you want to limit key length (S3 supports up to 1024 bytes for keys)
     max_key_length = 1024

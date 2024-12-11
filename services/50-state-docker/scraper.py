@@ -105,7 +105,7 @@ def gsheet_to_json():
         normalized_result = []
         
         # Colorado guidance
-        guidance = True
+        guidance = False
         if (guidance):
             logger.info("Reading Colorado guidance")        
             sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
@@ -113,9 +113,15 @@ def gsheet_to_json():
             wanted_fields = ['jurisdiction', 'page_title', 'link_title', 'pdf_link', 'doc_type', 'tombstone', 'language']        
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
             current_doc = 2
-            start_doc = 2 # set to start doc in guidance sheet
+            start_doc = 690 # set to start doc in guidance sheet
+            end_doc = 690
             for doc in docs:       
                 if (current_doc >= start_doc):
+                    if (end_doc != -1 and current_doc > end_doc):
+                        break
+                    title:str = doc[wanted_fields[1]]
+                    # hack
+                    doc[wanted_fields[1]] = title.replace("| Colorado Department of Public Health and Environment", "").strip()
                     normalized_result.append((normalize(wanted_fields, doc)))
                 current_doc += 1
                 
@@ -125,20 +131,25 @@ def gsheet_to_json():
             logger.info("Reading 50 state")
             sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
             worksheet_name = 'Individual doc links'
-            wanted_fields = ['State', 'Regulation Name', 'Description', 'Link']
+            wanted_fields = ['State', 'Regulation Name', 'Description', 'Link', 'doc_type', 'tombstone', 'language']
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
+            current_doc = 2
+            start_doc = 6079 # set to start doc in guidance sheet
+            end_doc = 6128 # -1 for to the end
             for doc in docs:
-                if jurisdiction_filter(doc[wanted_fields[0]]):
+                if (current_doc >= start_doc):
+                    if (end_doc != -1 and current_doc > end_doc):
+                        break
                     normalized_result.append((normalize(wanted_fields, doc)))
+                current_doc += 1
 
         # CARB            
-        carb = False
+        carb = True
         if carb:
             logger.info("Reading CARB")
-            sheet_url = get_sheet_url('1nX9KgKZQZqZcJ6t8q2F6jDmRQV9mL7Q3aF3YXjKQgY')
-            logger.info("Reading CARB")
+            sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
             worksheet_name = 'CARB Current Air District Rule Data'
-            wanted_fields = ['Air District Name', 'Rules', 'Regulatory Text']
+            wanted_fields = ['Air District Name', 'Regulation', 'Rules', 'Regulatory Text', 'doc_type', 'tombstone', 'language']
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
             for doc in docs:
                 normalized_result.append((normalize(wanted_fields, doc)))

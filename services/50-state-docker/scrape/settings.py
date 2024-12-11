@@ -65,7 +65,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'scrape.pipelines.S3Upload': 300,
+    'scrape.pipelines.S3Upload_Pipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
