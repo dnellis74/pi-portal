@@ -5,6 +5,7 @@
 
 # useful for handling different item types with a single interface
 import json
+import mimetypes
 from itemadapter import ItemAdapter
 
 import boto3
@@ -52,26 +53,22 @@ class S3Upload_Pipeline:
         # Decide how to handle the error: retry, drop the item, etc.
         # For this example, we'll just pass the failure along
         return failure
-    
-    def get_extension(self, mime_type):
-        if mime_type == 'application/msword':
-            return 'doc'
-        elif mime_type == 'text/html':
-            return 'html'
-        else:
-            return 'pdf'
 
     def s3_put_synch(self, item:PageContentItem):
         composite_title = item['jurisdiction'] + " - " + item['title']
         if item['description'] != '':
             composite_title += " - " + item['description']
         # Create the key in steps because of forward slashes are both wanted, AND unwanted
-        sanitized_title = sanitize_s3_key(f"{composite_title}.{self.get_extension(item['mime_type'])}")
+        if item['mime_type'] and mimetypes.guess_extension(item['mime_type']):
+            extension = mimetypes.guess_extension(item['mime_type']) or 'pdf'
+        else:
+            extension = 'pdf'
+        sanitized_title = sanitize_s3_key(f"{composite_title}.{extension}")
         sanitized_jurisdiction = sanitize_s3_key(f"{item['jurisdiction']}")
         sanitized_key = f"{self.job_folder}/{sanitized_jurisdiction}/{sanitized_title}"
         attributes = sanitize_metadata({
             '_source_uri': item['source_url'],
-            'pi_url': item['pi_url'],
+            'pi_url': f"s3://{self.bucket_name}/{sanitized_key}",
             'jurisdiction': item['jurisdiction'],
             'title': item['title'],
             'description': item['description'],

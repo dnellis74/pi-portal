@@ -105,7 +105,7 @@ def gsheet_to_json():
         normalized_result = []
         
         # Colorado guidance
-        guidance = False
+        guidance = True
         if (guidance):
             logger.info("Reading Colorado guidance")        
             sheet_url = get_sheet_url('1Iey3LEPm9rZYMZ0dSkPnL9IN7vYCbnwkBLlogJarKBs')
@@ -113,11 +113,13 @@ def gsheet_to_json():
             wanted_fields = ['jurisdiction', 'page_title', 'link_title', 'pdf_link', 'doc_type', 'tombstone', 'language']        
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name)
             current_doc = 2
-            start_doc = 690 # set to start doc in guidance sheet
-            end_doc = 690
+            start_doc = 627 # set to start doc in guidance sheet
+            end_doc = -1
             for doc in docs:       
                 if (current_doc >= start_doc):
                     if (end_doc != -1 and current_doc > end_doc):
+                        break
+                    if 'drive' in wanted_fields[3]:
                         break
                     title:str = doc[wanted_fields[1]]
                     # hack
@@ -144,7 +146,7 @@ def gsheet_to_json():
                 current_doc += 1
 
         # CARB            
-        carb = True
+        carb = False
         current_doc = 2
         start_doc = 418 # set to start doc in guidance sheet
         end_doc = -1

@@ -103,16 +103,6 @@ class LegisSpider(scrapy.Spider):
             self.logger.error(f"Error parsing {response.url}: {e}")
             self.logger.error("Stack trace:\n%s", traceback.format_exc())
 
-    def rename_with_mime(self, file_path:str, mime_type):
-        new_file_path = file_path
-        if not file_path.endswith('.pdf') and mime_type == 'application/pdf':
-            new_file_path = file_path + '.pdf'
-        elif not file_path.endswith('.doc') and mime_type == 'application/msword':
-            new_file_path = file_path + '.doc'
-        elif not file_path.endswith('.html') and mime_type == 'text/html':
-            new_file_path = file_path + '.html'
-        return new_file_path
-
     def build_item(self, url, pi_url, content, title, description, jurisdiction, doc_type, tombstone, language, mime_type):
         item = PageContentItem()
         item['source_url'] = url

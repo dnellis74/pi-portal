@@ -79,22 +79,19 @@ class SeleniumDownload:
             
             # These methods wait for the right button to be active, and then start the download
             if pattern == r'hylandcloud':
-                self.onbase_click_button()
-
-            # Wait for the download to complete
-            downloaded_file_path = self.wait_for_download(download_dir=unique_download_dir)
-            # Read the data into an http response and return
-            if downloaded_file_path:
-                with open(downloaded_file_path, 'rb') as f:
-                    file_data = f.read()
-                response = Response(
-                    url=request.url,
-                    body=file_data,
-                    request=request
-                )
-                self.logger.info(f"Completing {request.url} with Selenium for file download")
-                self.driver.quit()
-                return response
+                self.onbase_click_button(download_dir=unique_download_dir)
+                # Wait for the download to complete
+                downloaded_data = self.wait_for_download_and_read(download_dir=unique_download_dir)
+                # Read the data into an http response and return
+                if downloaded_data:
+                    response = Response(
+                        url=request.url,
+                        body=downloaded_data,
+                        request=request
+                    )
+                    self.logger.info(f"Completing {request.url} with Selenium for file download")
+                    self.driver.quit()
+                    return response
             else:
                 logging.warning(f"Failed to download file from {request.url}")
                 return Response(
@@ -121,23 +118,29 @@ class SeleniumDownload:
             # remove the file after processing
             shutil.rmtree(unique_download_dir)                        
         
-    def onbase_click_button(self):
+    def onbase_click_button(self, download_dir):
         # Wait for the PDF to load and switch to proper frame
         WebDriverWait(self.driver, 15).until(
             EC.presence_of_element_located((By.ID, "DocSelectPage"))
         )
         self.driver.switch_to.frame("DocSelectPage")
-        WebDriverWait(self.driver, 15).until(
-            EC.presence_of_element_located((By.ID, "pdfViewerContainer"))
-        )
+        try:
+            WebDriverWait(self.driver, 15).until(
+                EC.presence_of_element_located((By.ID, "pdfViewerContainer"))
+            )
+        except TimeoutException as e:
+            self.logger.info("Could be an XLS")
+            return None
+        raise Exception('Skipping right now')
         self.driver.switch_to.frame("pdfViewerContainer")
                 
         # Find and click the download link
         mainContentElement = self.driver.find_element(By.ID, "main-content")
         target_anchor = mainContentElement.find_element(By.TAG_NAME, "a")
         target_anchor.click()
+        return None
 
-    def wait_for_download(self, download_dir, timeout=30):
+    def wait_for_download_and_read(self, download_dir, timeout=30):
         seconds = 0
         downloaded_file = None
         while seconds < timeout:
@@ -146,7 +149,9 @@ class SeleniumDownload:
                 for file_name in files:
                     if not file_name.endswith('.crdownload'):
                         downloaded_file = file_name
-                        return os.path.join(download_dir, downloaded_file)
+                        downloaded_file_path = os.path.join(download_dir, downloaded_file)
+                        with open(downloaded_file_path, 'rb') as f:
+                            return f.read()
             time.sleep(1)
             seconds += 1
         return None
