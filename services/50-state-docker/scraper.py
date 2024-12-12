@@ -145,6 +145,9 @@ def gsheet_to_json():
 
         # CARB            
         carb = True
+        current_doc = 2
+        start_doc = 418 # set to start doc in guidance sheet
+        end_doc = -1
         if carb:
             logger.info("Reading CARB")
             sheet_url = get_sheet_url('1pvqmNPP_22wvKdiCYFqcj1z55Z3lgZOX0nDDHhmmIZg')
@@ -152,7 +155,11 @@ def gsheet_to_json():
             wanted_fields = ['Air District Name', 'Regulation', 'Rules', 'Regulatory Text', 'doc_type', 'tombstone', 'language']
             docs = gspread_map.get_fields(sheet_url, wanted_fields, worksheet_name) 
             for doc in docs:
-                normalized_result.append((normalize(wanted_fields, doc)))
+                if (current_doc >= start_doc):
+                    if (end_doc != -1 and current_doc > end_doc):
+                        break
+                    normalized_result.append((normalize(wanted_fields, doc)))
+                current_doc += 1
                 
         # Convert the list to JSON
         return json.dumps(normalized_result, indent=4)
