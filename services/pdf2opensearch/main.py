@@ -1,44 +1,62 @@
+from textract_detector import TextractDocumentTextDetector
 from document_formatter import OpenSearchDocumentFormatter
-from text_detector import TextractDocumentTextDetector
+from s3_manager import S3Manager  # Updated import
+from utils import get_root_filename
 import configparser
 
-from uploader import S3Uploader
-from utils import get_root_filename
 
-if __name__ == "__main__":    
+def main():
+    # Load configuration
     config = configparser.ConfigParser()
     config.read('config.ini')
 
     BUCKET_NAME = config['aws']['input_bucket']
-    DOCUMENT_KEY = config['aws']['input_object_key']
+    FOLDER_PREFIX = config['aws']['folder_prefix']
     OUTPUT_BUCKET_NAME = config['aws']['output_bucket']
     REGION_NAME = config['aws']['region']
 
-    detector = TextractDocumentTextDetector(
-        bucket_name=BUCKET_NAME,
-        document_key=DOCUMENT_KEY,
-        region_name=REGION_NAME,  # specify the region as needed
-        max_retries=60,
-        delay=5
-    )
-
+    # Initialize S3 manager and formatter
+    s3_manager = S3Manager(region_name=REGION_NAME)
     formatter = OpenSearchDocumentFormatter()
-    try:
-        extracted_text_lines = detector.extract_text()
-        opensearch_docs = formatter.format_document(
-            lines=extracted_text_lines,
-            bucket_name=BUCKET_NAME,
-            document_key=DOCUMENT_KEY
-        )        
-        # Upload the formatted document to S3
-        uploader = S3Uploader(region_name=REGION_NAME)
-        root_key = get_root_filename(DOCUMENT_KEY)        # Process each document (e.g., upload to S3 or index into OpenSearch)
 
-        for i, doc in enumerate(opensearch_docs):
-            uploader.upload_doc(
-                document=doc,
-                bucket_name=OUTPUT_BUCKET_NAME,
-                object_key=f"{root_key}_part_{i+1}.os.json"
+    # List all objects in the folder
+    object_keys = s3_manager.list_objects(BUCKET_NAME, FOLDER_PREFIX, exclude_extensions=['.json'])
+
+    # Process each object
+    for object_key in object_keys:
+        print(f"Processing object: {object_key}")
+
+        # Initialize Textract detector for each object
+        detector = TextractDocumentTextDetector(
+            bucket_name=BUCKET_NAME,
+            document_key=object_key,
+            region_name=REGION_NAME
+        )
+
+        try:
+            # Extract text
+            extracted_text_lines = detector.extract_text()
+
+            # Format documents for OpenSearch
+            opensearch_docs = formatter.format_document(
+                lines=extracted_text_lines,
+                bucket_name=BUCKET_NAME,
+                document_key=object_key
             )
-    except RuntimeError:
-        detector.logger.error("An error occurred during the text extraction or formatting process.", exc_info=True)
+
+            # Upload each formatted document to the output bucket
+            root_key = get_root_filename(object_key)
+            for i, doc in enumerate(opensearch_docs):
+                output_key = f"{root_key}_part_{i+1}.json"
+                s3_manager.upload_document(
+                    document=doc,
+                    bucket_name=OUTPUT_BUCKET_NAME,
+                    object_key=output_key
+                )
+
+        except RuntimeError as e:
+            print(f"Failed to process {object_key}: {str(e)}")
+
+
+if __name__ == "__main__":
+    main()

@@ -6,7 +6,6 @@ import json
 from botocore.exceptions import BotoCoreError, ClientError
 from typing import List, Optional
 
-
 class TextractDocumentTextDetector:
     """
     A class for extracting text from documents stored in S3 using Amazon Textract's
