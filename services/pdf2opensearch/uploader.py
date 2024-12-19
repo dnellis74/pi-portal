@@ -46,20 +46,8 @@ class S3Uploader:
         """
         try:
             json_data = json.dumps(document).encode('utf-8')
-            new_key = self.replace_file_extension(object_key, 'os.json')
-            self.s3.put_object(Bucket=bucket_name, Key=new_key, Body=json_data, ContentType='application/json')
-            self.logger.info(f"Uploaded document to s3://{bucket_name}/{new_key}")
+            self.s3.put_object(Bucket=bucket_name, Key=object_key, Body=json_data, ContentType='application/json')
+            self.logger.info(f"Uploaded document to s3://{bucket_name}/{object_key}")
         except (BotoCoreError, ClientError) as e:
             self.logger.error("Failed to upload document to S3", exc_info=True)
             raise RuntimeError("Failed to upload document to S3") from e
-    
-    def replace_file_extension(self, key: str, new_extension: str) -> str:
-        # Split the key on the last dot to separate the filename and its extension
-        parts = key.rsplit('.', 1)
-        if len(parts) == 1:
-            # If there's no extension, just add the new one
-            return f"{key}.{new_extension.lstrip('.')}"
-        else:
-            # Replace the existing extension
-            base = parts[0]
-            return f"{base}.{new_extension.lstrip('.')}"
