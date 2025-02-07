@@ -1,0 +1,16 @@
+# Clear previous setup
+rm -rf tree-viewer
+
+# Create new app and move into its directory
+npx create-react-app tree-viewer
+cd tree-viewer
+
+# Install required dependencies
+npm install rc-tree react-virtualized @aws-amplify/cli aws-amplify @emotion/styled
+
+# Clear any potential cache issues
+npm cache clean --force
+
+# Reinstall dependencies
+rm -rf node_modules
+npm install 
