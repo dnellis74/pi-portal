@@ -5,16 +5,16 @@ applications:
       phases:
         preBuild:
           commands:
-            - echo "Current directory: $(pwd)"
-            - ls -l  # Debugging step to check folder contents
-            - npm install
+            - "echo 'Current directory: $(pwd)'"  # Encapsulated in quotes
+            - "ls -l"  # Debugging: Show files and directories
+            - "npm install"
         build:
           commands:
-            - npm run build
+            - "npm run build"
       artifacts:
-        baseDirectory: build  # No need to specify apps/tree here; it's already inside
+        baseDirectory: build
         files:
-          - '**/*'
+          - "**/*"
       cache:
         paths:
-          - node_modules/** 
+          - "node_modules/**"
