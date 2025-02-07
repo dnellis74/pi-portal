@@ -1,19 +1,20 @@
 version: 1
 applications:
-  - appRoot: apps/tree  # <<< Ensures Amplify only works inside apps/tree
+  - appRoot: apps/tree
     frontend:
       phases:
         preBuild:
           commands:
-            - cd apps/tree
+            - echo "Current directory: $(pwd)"
+            - ls -l  # Debugging step to check folder contents
             - npm install
         build:
           commands:
             - npm run build
       artifacts:
-        baseDirectory: apps/tree/build
+        baseDirectory: build  # No need to specify apps/tree here; it's already inside
         files:
           - '**/*'
       cache:
         paths:
-          - apps/tree/node_modules/** 
+          - node_modules/** 
