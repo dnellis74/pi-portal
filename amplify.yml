@@ -1,17 +1,19 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - cd apps/tree
-        - npm ci
-    build:
-      commands:
-        - npm run build
-  artifacts:
-    baseDirectory: apps/tree/build
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - apps/tree/node_modules/**/* 
+applications:
+  - appRoot: apps/tree  # <<< Ensures Amplify only works inside apps/tree
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd apps/tree
+            - npm install
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: apps/tree/build
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - apps/tree/node_modules/** 
