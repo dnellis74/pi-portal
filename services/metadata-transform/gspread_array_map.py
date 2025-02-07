@@ -2,6 +2,9 @@ import gspread
 import logging
 from google.oauth2.service_account import Credentials
 
+def get_sheet_url(sheet_id):
+    return f'https://docs.google.com/spreadsheets/d/{sheet_id}/edit#gid=0'
+
 class GsheetArrayMap:
     """
     A class to interact with Google Sheets using gspread and return filtered data.

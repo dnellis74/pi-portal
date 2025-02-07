@@ -1,0 +1,182 @@
+Bedrock Knowledge Base - Phase 1 Configuration (OpenSearch + Bedrock)
+
+# Overview
+
+The **Bedrock Knowledge Base (BKB)** is designed to provide structured access to a large corpus of **policy-related documents** stored in **S3 as JSON files with metadata**. Users should be able to search, filter, retrieve, and summarize relevant documents with **full control over indexing and retrieval logic** using **Amazon OpenSearch**.
+
+## Query Flow (User Interaction)
+
+1. **User Inputs a Question** (Example: *“Compare Colorado and California’s air quality regulations on non-road engines”*).
+    - **Metadata Filtering (Fastest Path)**
+        - If metadata filters (e.g., **state, document type**) match, results are retrieved quickly.
+    - **Full-Text Search (BM25) for Keyword Matching**
+        - If an exact or near-exact match exists, it is retrieved based on keyword ranking.
+        - If the results are insufficient, the user **triggers vector search**.
+    - **Vector Search (Embeddings) for Similarity-Based Retrieval**
+        - Used only when **keyword search is not enough** or when the user asks for **similar policies**.
+2. **Document Retrieval**:
+    - Search OpenSearch for relevant documents.
+    - Retrieve **top-ranked** results based on query relevance.
+    - Use **vector search** for semantic similarity.
+3. **AI Summarization**:
+    - Bedrock model (Claude/Llama) generates **summary** based on retrieved documents.
+    - Provide **citations** to sources.
+4. **Follow-Up Queries**:
+    - Allow users to refine their search.
+    - Suggest **related documents** based on embeddings.
+5. **Session Ends**:
+    - User can restart with a new question.
+
+## System Architecture
+
+- **Data Storage**: JSON files stored in **S3** with structured metadata.
+- **Search & Retrieval**: **Amazon OpenSearch** (Elasticsearch) for full-text and vector-based search.
+- **Processing (if needed)**: **Amazon Textract** for extracting text from PDFs or images.
+- **AI Processing**: **Bedrock (Claude, Llama, Titan, etc.)** for summarization & Q&A.
+
+---
+
+## Step 1: Data Ingestion & Storage
+
+### Key Choices:
+
+- **Document Format**: JSON (preferred) or unstructured (PDF, DOCX, etc.).
+- **Storage**: S3 bucket with structured metadata for easy retrieval.
+- **Metadata Fields**:
+    - `title`: Document title.
+    - `jurisdiction`: (state, federal, etc.).
+    - `document_type`: (regulation, implementation guidance, etc.).
+    - `date_published`: Timestamp.
+    - `source_url`: Reference URL.
+    - `keywords`: Extracted or manually assigned.
+
+### **Processing Unstructured Documents (If Needed)**
+
+- If documents are **not** in JSON, use **Amazon Textract** to:
+    - Convert PDFs to text.
+    - Extract tables and key-value pairs.
+    - Store extracted content alongside JSON metadata.
+
+---
+
+## Step 2: Indexing in OpenSearch
+
+### Key Choices:
+
+- **Hybrid Indexing Strategy**:
+    - Store metadata as structured fields.
+    - Store document text for **full-text search**.
+    - Use **vector embeddings** for similarity-based retrieval.
+    - Why hybrid approach?
+    
+    | **User Query** | **Search Type** |
+    | --- | --- |
+    | *"Show me Colorado’s methane regulations."* | ✅ **Metadata Filtering** + Full-Text Search |
+    | *"What are California's rules on carbon credits?"* | ✅ **Full-Text Search** (BM25) |
+    | *"Find similar policies to California's clean air law."* | 🔄 **Vector Search (Embeddings)** |
+    | *"Compare Colorado & California policies on non-road engines."* | 🔄 **Hybrid: Full-Text + Vector Search** |
+- **Search Optimization**:
+    - **Text-based retrieval**: OpenSearch full-text search.
+    - **Semantic search**: Use vector embeddings from **Titan Embeddings**.
+    - **Ranking strategy**:
+        - Weight results by recency.
+        - Boost relevance based on jurisdiction.
+- **Pipeline for Indexing**:
+    - Documents uploaded to S3 trigger an AWS Lambda function.
+    - Extracted content & metadata are indexed into OpenSearch.
+
+---
+
+---
+
+## Step 3: AI Processing for Summarization
+
+### Key Choices:
+
+- **Bedrock Model Selection**:
+    - **Claude 3**: Best for summarization & complex reasoning. (Recommended b/c of it’s reasoning ability)
+- **Chunking strategy:**
+    - Fixed sized
+    
+    | **Parameter** | **Value** | **Why?** |
+    | --- | --- | --- |
+    | **Chunking Strategy** | `FIXED_SIZE` | Ensures uniform chunk sizes across all documents. |
+    | **Max Tokens Per Chunk** | `512` | Keeps chunks small for **efficient vector search**. |
+    | **Overlap Percentage** | `10%` | Ensures **context retention** across chunks. |
+    - In the future we may want to do a hybrid approach where we combine hierarchical, semantic and fixed size as they all have pros
+    
+    | **Chunking Strategy** | **Description** | **Best For** |
+    | --- | --- | --- |
+    | **No Chunking (NONE)** | Treats each document as a single unit. | When documents are short and self-contained. |
+    | **Fixed-Size Chunking** | Splits documents into uniform **token-based** chunks (e.g., 512 or 1000 tokens). | Best for **vector embeddings & search retrieval**. |
+    | **Hierarchical Chunking** | Breaks documents into sections/subsections using headings (H1, H2, etc.). | Best for **structured documents** like regulations. |
+    | **Semantic Chunking** | Uses AI/NLP to determine logical breaking points in text. | Best for **AI-generated summarization & chatbots**. |
+- **Hybrid summarization Approach**:
+    - **Extractive Summarization**: Use direct excerpts from docs.
+    - **Abstractive Summarization**: AI-generated synthesis.
+    - **Hybrid Approach**: Combine both for accuracy + readability.
+    - Why Hybrid?
+    
+    | **Approach** | **Pros** | **Cons** | **Best For** |
+    | --- | --- | --- | --- |
+    | **Extractive Summarization** (Pulls direct quotes from documents) | ✅ Maintains accuracy ✅ Easy to verify ✅ Preserves legal language | ❌ Can be fragmented ❌ Doesn't rewrite text ❌ May miss key insights | 🏛 Legal & regulatory text where exact phrasing is critical |
+    | **Abstractive Summarization** (AI rewrites in its own words) | ✅ More readable ✅ Condenses info well ✅ Highlights key points | ❌ May introduce hallucinations ❌ Needs citation validation | 📄 General policy summaries, user-friendly overviews |
+    | **Hybrid Summarization** (Combines both) | ✅ Best of both ✅ Summarizes but cites original text ✅ Reduces hallucination risk | ❌ More complex to implement ❌ Needs verification | 📊 Policy comparisons, regulatory briefs, decision-maker reports |
+- **Citation Handling**:
+    - Display source documents for every AI-generated summary.
+    - Optional: Highlight AI-sourced insights vs. direct quotes.
+
+---
+
+## Step 5: API & UI Integration
+
+### Key Choices:
+
+- **Backend APIs**:
+    - `/search`: Query OpenSearch for documents.
+    - `/summarize`: Pass retrieved docs to Bedrock for summarization.
+    - `/compare`: Generate comparisons across jurisdictions.
+- **User Interface (UI)**:
+    - Search bar with filters.
+    - Display retrieved docs with summaries.
+    - Support for **follow-up questions**.
+
+---
+
+## Step 6: Security & Access Control
+
+### Key Choices:
+
+- **Authentication**:
+    - API Gateway with Cognito (if needed).
+    - Role-based access control (RBAC).
+- **Data Permissions**:
+    - Enforce IAM-based access to OpenSearch.
+    - Restrict sensitive document visibility.
+- **Rate Limiting**:
+    - API rate limits to prevent misuse.
+
+---
+
+## Step 7: Scalability & Optimization
+
+### Key Choices:
+
+- **Indexing Performance**:
+    - Periodic reindexing to optimize search performance.
+    - Shard OpenSearch indices for large-scale queries.
+- **Cost Management**:
+    - Use **reserved instances** for OpenSearch to reduce cost.
+    - Optimize Bedrock calls with caching.
+- **Future Expansion**:
+    - Support **multi-state** and **federal** policy comparisons.
+    - Add **state-to-state benchmarking dashboards**.
+
+---
+
+## Open Questions & Next Steps
+
+- **Metadata Completeness**: Are all documents consistently formatted?
+- **Performance Tuning**: How to optimize retrieval relevance?
+- **User Testing**: Gather feedback from policy researchers & legal teams.
+- **Long-Term Strategy**: Should we integrate with generative search agents?

@@ -1,1 +1,4 @@
 lib/
+.venv
+__pycache__
+cache
