@@ -1,17 +1,20 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - cd apps/tree
-        - npm ci
-    build:
-      commands:
-        - npm run build
-  artifacts:
-    baseDirectory: apps/tree/build
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - apps/tree/node_modules/**/* 
+applications:
+  - appRoot: apps/tree
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - "echo 'Current directory: $(pwd)'"  # Encapsulated in quotes
+            - "ls -l"  # Debugging: Show files and directories
+            - "npm install"
+        build:
+          commands:
+            - "npm run build"
+      artifacts:
+        baseDirectory: build
+        files:
+          - "**/*"
+      cache:
+        paths:
+          - "node_modules/**"
