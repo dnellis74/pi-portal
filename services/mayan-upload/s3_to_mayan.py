@@ -31,8 +31,8 @@ class MayanS3Sync:
             self.s3 = boto3.client('s3')
         
         # Mayan EDMS settings
-        self.mayan_url = os.getenv('MAYAN_API_URL', 'http://localhost:80')
-        self.mayan_token = os.getenv('MAYAN_API_TOKEN', '4b5e04503f6dcddfd6eda6f6f039d7ab7d3e4b7d')
+        self.mayan_url = os.getenv('MAYAN_API_URL', 'http://18.237.103.111')
+        self.mayan_token = os.getenv('MAYAN_API_TOKEN', '8c9ad3d7718df0753afb3d250b84258a3b72f509')
         self.headers = {
             'Authorization': f'Token {self.mayan_token}'
         }
@@ -66,24 +66,32 @@ class MayanS3Sync:
             raise ValueError('S3_BUCKET_NAME must be configured')
 
     def get_document_type_id(self, type_name: str) -> Optional[int]:
-        """Get document type ID from Mayan, create if doesn't exist"""
-        # Check if document type exists
-        response = requests.get(
-            f'{self.mayan_url}/api/v4/document_types/',
-            headers=self.headers
-        )
-        
-        for doc_type in response.json()['results']:
-            if doc_type['label'] == type_name:
-                return doc_type['id']
-        
-        # Create new document type if it doesn't exist
-        response = requests.post(
-            f'{self.mayan_url}/api/v4/document_types/',
-            headers=self.headers,
-            json={'label': type_name}
-        )
-        return response.json()['id']
+        """Get document type ID from Mayan; create if it doesn't exist."""
+        try:
+            # Check if document type exists
+            response = requests.get(
+                f'{self.mayan_url}/api/v4/document_types/',
+                headers=self.headers
+            )
+            response.raise_for_status()  # Raise an exception for HTTP errors
+
+            for doc_type in response.json().get('results', []):
+                if doc_type['label'] == type_name:
+                    return doc_type['id']
+
+            # Document type does not exist; attempt to create it
+            create_response = requests.post(
+                f'{self.mayan_url}/api/v4/document_types/',
+                headers=self.headers,
+                json={'label': type_name}
+            )
+            create_response.raise_for_status()  # Raise an exception for HTTP errors
+
+            return create_response.json().get('id')
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to get or create document type '{type_name}': {e}")
+            return None
 
     def calculate_average_processing_time(self) -> float:
         """Calculate the average processing time from recent documents"""
@@ -317,4 +325,4 @@ class MayanS3Sync:
 if __name__ == "__main__":
     syncer = MayanS3Sync(aws_profile='default')
     logger.info("Processing new documents...")
-    syncer.process_s3_folder(batch_size=200) 
+    syncer.process_s3_folder(batch_size=5000)

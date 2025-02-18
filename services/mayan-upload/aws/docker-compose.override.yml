@@ -1,0 +1,7 @@
+version: '3'
+services:
+  postgresql-backup:
+    command:
+      - /bin/sh
+      - -c
+      - 'pg_dump -F p | gzip > /backups/2025-02-08_19-40.sql.gz'

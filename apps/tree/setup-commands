@@ -1,9 +1,12 @@
 # Clear previous setup
-rm -rf tree-viewer
+rm -rf apps/tree
 
-# Create new app and move into its directory
-npx create-react-app tree-viewer
-cd tree-viewer
+# Create directory structure
+mkdir -p apps/tree
+
+# Create new app in the correct location
+cd apps/tree
+npx create-react-app .
 
 # Install required dependencies
 npm install rc-tree react-virtualized @aws-amplify/cli aws-amplify @emotion/styled

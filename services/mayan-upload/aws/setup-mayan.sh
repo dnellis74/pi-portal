@@ -3,12 +3,13 @@ set -e  # Exit on error
 
 # 🔹 Configuration Variables
 AWS_REGION="us-west-2"
-INSTANCE_TYPE="t3.medium"
+INSTANCE_TYPE="r5ad.large"
 AMI_ID="ami-00c257e12d6828491"
 KEY_NAME="mayan-key"
 SECURITY_GROUP="mayan-sg"
 INSTANCE_NAME="mayan-server"
 DOMAIN="yourdomain.com"
+
 USE_HTTPS=false
 
 echo "🚀 Setting up AWS resources in $AWS_REGION..."
@@ -107,8 +108,6 @@ sed -i.bak 's/\$(date/\$\$(date/g' docker-compose.yml
 sed -i.bak 's/^\([[:space:]]*restart:[[:space:]]*\)no/\1"no"/' docker-compose.yml
 # <-- New modification: change default host port from 80 to 8000 -->
 sed -i.bak 's/\${MAYAN_FRONTEND_HTTP_PORT:-80}/\${MAYAN_FRONTEND_HTTP_PORT:-8000}/g' docker-compose.yml
-# fix the rabbitmq timeout issue
-#sed -i.bak 's/^\([[:space:]]*\)RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS:.*$/\1RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "--rabbit consumer_timeout 1800000"/' docker-compose.yml
 
 
 # (Optional) If you also have an override file to copy, repeat the above for it.
@@ -118,21 +117,21 @@ sed -i.bak 's/\${MAYAN_FRONTEND_HTTP_PORT:-80}/\${MAYAN_FRONTEND_HTTP_PORT:-8000
 
 # 🔹 Step 5b: Copy the Modified Files to the EC2 Instance
 
-echo "🚢 Copying docker-compose.yml to remote host..."
+echo "🚢 Copying docker-compose files to remote host..."
 ssh -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ubuntu@"$INSTANCE_IP" "mkdir -p ~/mayan"
 scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" docker-compose.yml ubuntu@"$INSTANCE_IP":~/mayan/docker-compose.yml
 scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" .env ubuntu@"$INSTANCE_IP":~/mayan/.env
 
-# If you have a docker-compose.override.yml file, copy it as well:
-# scp -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" docker-compose.override.yml ubuntu@"$INSTANCE_IP":~/mayan/docker-compose.override.yml
-
 # 🔹 Step 6: Install and Setup Mayan EDMS on EC2
 ssh -t -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ubuntu@"$INSTANCE_IP" <<'EOF'
     set -e
-    set -x
     echo "🚀 Updating system and installing dependencies..."
     sudo apt update && sudo apt upgrade -y
-    sudo apt install -y docker.io docker-compose nginx certbot python3-certbot-nginx
+    sudo apt install -y docker.io nginx certbot python3-certbot-nginx
+    export DOCKER_CONFIG=$HOME/.docker
+    mkdir -p $DOCKER_CONFIG/cli-plugins
+    curl -SL https://github.com/docker/compose/releases/download/v2.15.1/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+    chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
 
     echo "🔧 Adding user to Docker group (logout required to take effect)..."
     sudo usermod -aG docker $USER
@@ -145,10 +144,12 @@ ssh -t -o StrictHostKeyChecking=no -i "${KEY_NAME}.pem" ubuntu@"$INSTANCE_IP" <<
     docker compose up -d
 
     echo "🌐 Setting up Nginx reverse proxy for Mayan..."
-    sudo tee /etc/nginx/sites-available/mayan > /dev/null <<EOT
+    sudo tee /etc/nginx/sites-available/mayan <<EOT
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
+
+    client_max_body_size 100M;
 
     location / {
         proxy_pass http://localhost:8000;
@@ -158,19 +159,20 @@ server {
     }
 }
 EOT
-    sudo ln -s /etc/nginx/sites-available/mayan /etc/nginx/sites-enabled/
-    sudo systemctl restart nginx
+    sudo ln -sf /etc/nginx/sites-available/mayan /etc/nginx/sites-enabled/
+    sudo systemctl stop nginx
 
     if [ "$USE_HTTPS" = true ]; then
         echo "🔒 Setting up HTTPS with Let's Encrypt..."
         sudo certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m your@email.com
     fi
 
+    sudo systemctl start nginx
 
     echo "🔄 Enabling Mayan to restart on reboot..."
     (crontab -l 2>/dev/null; echo "@reboot cd ~/mayan && docker-compose up -d") | crontab -
     echo "🎉 Mayan EDMS is now running!"
-EOF
+
 
 # 🔹 Step 7: Display Access Information
 echo "✅ Mayan EDMS is now running on: http://$INSTANCE_IP"

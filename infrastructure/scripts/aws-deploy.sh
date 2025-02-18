@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-
+set -x
 # Configuration
 APP_NAME="copilot"
 FRAMEWORK="React"
@@ -67,14 +67,14 @@ echo -e "  User ARN: $USER_ARN"
 echo -e "  Region: $REGION"
 
 # Confirm account
-read -p "Is this the correct AWS account? (y/N) " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${YELLOW}Operation cancelled${NC}"
-    exit 1
-fi
+#read -p "Is this the correct AWS account? (y/N) " -n 1 -r
+#echo
+#if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+#    echo -e "${YELLOW}Operation cancelled${NC}"
+#    exit 1
+#fi
 
-# Get Git repository URL
+# Get Git repository URL and credentials
 REPO_URL=$(git config --get remote.origin.url)
 if [ -z "$REPO_URL" ]; then
     echo -e "${RED}Error: No Git remote URL found. Please set up your Git repository first.${NC}"
@@ -84,6 +84,29 @@ fi
 # Convert SSH URL to HTTPS if necessary
 if [[ $REPO_URL == git@* ]]; then
     REPO_URL=$(echo $REPO_URL | sed 's|git@github.com:|https://github.com/|')
+fi
+
+echo -e "${GREEN}Using repository URL: $REPO_URL${NC}"
+
+# Check for GitHub token (required for AWS Amplify API)
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo -e "${RED}Error: GITHUB_TOKEN environment variable not set${NC}"
+    echo -e "${YELLOW}Even though you have local Git access, AWS Amplify's API requires a GitHub token${NC}"
+    echo -e "${YELLOW}Please create a token with 'repo' and 'admin:repo_hook' permissions at:${NC}"
+    echo -e "${YELLOW}https://github.com/settings/tokens${NC}"
+    echo -e "Then set it with: export GITHUB_TOKEN=your_token_here"
+    exit 1
+fi
+
+# Get Git credentials
+GIT_USERNAME=$(git config --get user.name)
+GIT_EMAIL=$(git config --get user.email)
+if [ -z "$GIT_USERNAME" ] || [ -z "$GIT_EMAIL" ]; then
+    echo -e "${RED}Error: Git user.name or user.email not configured.${NC}"
+    echo -e "Please configure with:"
+    echo -e "  git config --global user.name \"Your Name\""
+    echo -e "  git config --global user.email \"your.email@example.com\""
+    exit 1
 fi
 
 # Function to check if app already exists
@@ -122,46 +145,20 @@ if [ -n "$APP_ID" ]; then
 else
     echo -e "${GREEN}Creating new Amplify app...${NC}"
 
-    # Create the Amplify app
+    # Create the Amplify app with repository
     APP_ID=$(aws amplify create-app \
         --name "$APP_NAME" \
         --region "$REGION" \
         --profile $AWS_PROFILE \
         --platform "WEB" \
+        --repository "$REPO_URL" \
+        --oauth-token "$GITHUB_TOKEN" \
         --query "app.appId" \
         --output text)
 
     echo -e "${GREEN}Successfully created Amplify app with ID: $APP_ID${NC}"
-
-    # Create branch
-    echo -e "${YELLOW}Creating branch configuration...${NC}"
-    aws amplify create-branch \
-        --app-id "$APP_ID" \
-        --branch-name "$BRANCH" \
-        --region "$REGION" \
-        --profile $AWS_PROFILE \
-        --stage "PRODUCTION"
-
-    echo -e "${GREEN}Branch '$BRANCH' created successfully${NC}"
-
-    # Connect repository
-    echo -e "${YELLOW}Connecting Git repository...${NC}"
-    aws amplify create-webhook \
-        --app-id "$APP_ID" \
-        --branch-name "$BRANCH" \
-        --region "$REGION" \
-        --profile $AWS_PROFILE \
-        --description "Automated webhook for $BRANCH branch"
-
-    aws amplify update-app \
-        --app-id "$APP_ID" \
-        --region "$REGION" \
-        --profile $AWS_PROFILE \
-        --repository "$REPO_URL" \
-        --platform-oauth-token "$(git config --get credential.helper)" \
-        --enable-auto-branch
-
-    echo -e "${GREEN}Repository connected successfully${NC}"
+    echo -e "${YELLOW}Note: You will need to authorize AWS Amplify in your GitHub account through the AWS Console${NC}"
+    echo -e "${YELLOW}Visit: https://console.aws.amazon.com/amplify/home?region=$REGION#/$APP_ID${NC}"
 fi
 
 # Save app details to a config file
@@ -180,7 +177,18 @@ cat > .amplify-config.json << EOL
 EOL
 
 echo -e "${GREEN}Deployment setup complete!${NC}"
+echo -e "${YELLOW}Creating initial deployment...${NC}"
+
+# Start the initial deployment
+aws amplify start-job \
+    --app-id "$APP_ID" \
+    --branch-name "$BRANCH" \
+    --job-type "RELEASE" \
+    --region "$REGION" \
+    --profile $AWS_PROFILE
+
+echo -e "${GREEN}Initial deployment started!${NC}"
 echo -e "${YELLOW}Next steps:${NC}"
-echo "1. Go to AWS Amplify Console: https://console.aws.amazon.com/amplify/home?region=$REGION#/$APP_ID"
-echo "2. Verify repository connection"
-echo "3. Push changes to trigger deployment" 
+echo "1. Monitor deployment: https://console.aws.amazon.com/amplify/home?region=$REGION#/$APP_ID"
+echo "2. After deployment completes, your app will be available at:"
+echo "   https://$BRANCH.$APP_ID.amplifyapp.com"

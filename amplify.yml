@@ -1,18 +1,16 @@
 version: 1
 applications:
-  - appRoot: apps/tree
+  - appRoot: apps/copilot
     frontend:
       phases:
         preBuild:
           commands:
-            - "echo 'Current directory: $(pwd)'"  # Encapsulated in quotes
-            - "ls -l"  # Debugging: Show files and directories
-            - "npm install"
+            - npm install
         build:
           commands:
-            - "npm run build"
+            - npm run build
       artifacts:
-        baseDirectory: build
+        baseDirectory: dist
         files:
           - "**/*"
       cache:

@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Configuration
+APP_NAME="copilot"
+BRANCH="main"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -36,6 +40,13 @@ if ! aws configure list-profiles | grep -q "^${AWS_PROFILE}$"; then
     exit 1
 fi
 
+# Get region from AWS profile, defaulting to us-west-2
+REGION=$(aws configure get region --profile $AWS_PROFILE)
+if [ -z "$REGION" ]; then
+    echo -e "${YELLOW}No region found in AWS profile, defaulting to us-west-2${NC}"
+    REGION="us-west-2"
+fi
+
 # Verify AWS credentials and get account info
 echo -e "${YELLOW}Verifying AWS credentials...${NC}"
 ACCOUNT_INFO=$(aws sts get-caller-identity --profile $AWS_PROFILE)
@@ -52,50 +63,32 @@ echo -e "${GREEN}Current AWS credentials:${NC}"
 echo -e "  Account ID: $CURRENT_ACCOUNT_ID"
 echo -e "  User ID: $CURRENT_USER_ID"
 echo -e "  User ARN: $CURRENT_USER_ARN"
+echo -e "  Region: $REGION"
 
-# Check for config file
-if [ ! -f ".amplify-config.json" ]; then
-    echo -e "${RED}Error: .amplify-config.json not found. Has the app been deployed?${NC}"
+# Check for amplify.yml
+if [ ! -f "amplify.yml" ]; then
+    echo -e "${RED}Error: amplify.yml not found. Is this an Amplify project?${NC}"
     exit 1
 fi
 
-# Read configuration
-echo -e "${YELLOW}Reading configuration...${NC}"
-APP_ID=$(jq -r '.appId' .amplify-config.json)
-APP_NAME=$(jq -r '.appName' .amplify-config.json)
-REGION=$(jq -r '.region' .amplify-config.json)
-SAVED_PROFILE=$(jq -r '.awsProfile' .amplify-config.json)
-SAVED_ACCOUNT_ID=$(jq -r '.accountId' .amplify-config.json)
-SAVED_USER_ID=$(jq -r '.userId' .amplify-config.json)
+# Function to check if app exists
+check_app_exists() {
+    aws amplify list-apps --region $REGION --profile $AWS_PROFILE --query "apps[?name=='$APP_NAME'].appId" --output text
+}
 
-if [ -z "$APP_ID" ] || [ "$APP_ID" = "null" ]; then
-    echo -e "${RED}Error: Invalid app ID in configuration${NC}"
+# Get app ID
+echo -e "${YELLOW}Looking up Amplify app...${NC}"
+APP_ID=$(check_app_exists)
+
+if [ -z "$APP_ID" ]; then
+    echo -e "${RED}Error: No Amplify app named '$APP_NAME' found in region $REGION${NC}"
     exit 1
 fi
 
-echo -e "${YELLOW}Deployment was created with:${NC}"
-echo -e "  Account ID: $SAVED_ACCOUNT_ID"
-echo -e "  User ID: $SAVED_USER_ID"
-echo -e "  AWS Profile: $SAVED_PROFILE"
-
-# Warn if using different account or user
-if [ "$CURRENT_ACCOUNT_ID" != "$SAVED_ACCOUNT_ID" ]; then
-    echo -e "${RED}Warning: Current AWS account ($CURRENT_ACCOUNT_ID) differs from deployment account ($SAVED_ACCOUNT_ID)${NC}"
-    read -p "Are you sure you want to continue? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Operation cancelled${NC}"
-        exit 1
-    fi
-elif [ "$AWS_PROFILE" != "$SAVED_PROFILE" ]; then
-    echo -e "${YELLOW}Warning: Current AWS profile ($AWS_PROFILE) differs from deployment profile ($SAVED_PROFILE)${NC}"
-    read -p "Do you want to continue? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Operation cancelled${NC}"
-        exit 1
-    fi
-fi
+echo -e "${YELLOW}Found Amplify app:${NC}"
+echo -e "  App Name: $APP_NAME"
+echo -e "  App ID: $APP_ID"
+echo -e "  Region: $REGION"
 
 # Confirm deletion
 echo -e "${RED}WARNING: This will delete the Amplify app '$APP_NAME' ($APP_ID) and all its resources${NC}"
@@ -111,14 +104,14 @@ echo -e "${YELLOW}Deleting Amplify app...${NC}"
 if aws amplify delete-app --app-id "$APP_ID" --region "$REGION" --profile $AWS_PROFILE; then
     echo -e "${GREEN}Successfully deleted Amplify app${NC}"
     
-    # Remove configuration file
-    rm -f .amplify-config.json
-    echo -e "${GREEN}Removed configuration file${NC}"
+    # Remove build spec
+    rm -f amplify.yml
+    echo -e "${GREEN}Removed build specification file${NC}"
     
-    # Remove build spec if it exists
-    if [ -f "amplify.yml" ]; then
-        rm -f amplify.yml
-        echo -e "${GREEN}Removed build specification file${NC}"
+    # Remove config file if it exists
+    if [ -f ".amplify-config.json" ]; then
+        rm -f .amplify-config.json
+        echo -e "${GREEN}Removed configuration file${NC}"
     fi
 else
     echo -e "${RED}Failed to delete Amplify app${NC}"
