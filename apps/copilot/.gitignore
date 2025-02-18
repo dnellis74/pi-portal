@@ -48,3 +48,7 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Amplify deployment
+.amplify-config.json
+amplify.yml
