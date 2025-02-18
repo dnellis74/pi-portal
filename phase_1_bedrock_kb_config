@@ -1,29 +1,28 @@
-Bedrock Knowledge Base - Phase 1 Configuration (OpenSearch + Bedrock)
+Library and Librarian - Phase 1 Configuration (Kendra + Bedrock Knowledge Bases)
 
 # Overview
 
-The **Bedrock Knowledge Base (BKB)** is designed to provide structured access to a large corpus of **policy-related documents** stored in **S3 as JSON files with metadata**. Users should be able to search, filter, retrieve, and summarize relevant documents with **full control over indexing and retrieval logic** using **Amazon OpenSearch**.
+The Libarian and Librarian features are the two parts that make up the Retrieval Augmented Generation process. These are are two seperate processes using a search (e.g. **Kendra**) and a knowledge base (e.g. **Bedrock Knowledge Base (BKB)**). **BKB** allows us to use **Kendra** as the retrieval process.
+**Kendra** is a search engine where the user searches for and selects relevant documents. These documents are used as the context in the second part of the process where the context is used by **BKB** to answer a user's question. 
+The **BKB** is designed to provide structured access to a large corpus of **policy-related documents** for inference. Users will be able to search, filter, and retrieve documents using the first part of process (**Kendra**). **BKB** will be used for 
+**inference**, which means that it will use a model to summarize or compare the retreived documents using a model (e.g. Claude 3.5.) and the output summary will provide citations in it's answer.
+
+
 
 ## Query Flow (User Interaction)
 
 1. **User Inputs a Question** (Example: *“Compare Colorado and California’s air quality regulations on non-road engines”*).
-    - **Metadata Filtering (Fastest Path)**
-        - If metadata filters (e.g., **state, document type**) match, results are retrieved quickly.
-    - **Full-Text Search (BM25) for Keyword Matching**
+    - **Metadata Filtering**
+        - Metadata filters (e.g., **state, document type**) match, results are retrieved quickly.
+    - **Full-Text Search for Keyword Matching**
         - If an exact or near-exact match exists, it is retrieved based on keyword ranking.
-        - If the results are insufficient, the user **triggers vector search**.
-    - **Vector Search (Embeddings) for Similarity-Based Retrieval**
-        - Used only when **keyword search is not enough** or when the user asks for **similar policies**.
-2. **Document Retrieval**:
-    - Search OpenSearch for relevant documents.
-    - Retrieve **top-ranked** results based on query relevance.
-    - Use **vector search** for semantic similarity.
-3. **AI Summarization**:
+    - **Inference**
+        - Used only after **metadata filtering and keyword search has retrieved results**.
+2. **Inference or AI Summarization**:
     - Bedrock model (Claude/Llama) generates **summary** based on retrieved documents.
     - Provide **citations** to sources.
 4. **Follow-Up Queries**:
     - Allow users to refine their search.
-    - Suggest **related documents** based on embeddings.
 5. **Session Ends**:
     - User can restart with a new question.
 
