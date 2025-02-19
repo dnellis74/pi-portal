@@ -179,6 +179,21 @@ EOL
 echo -e "${GREEN}Deployment setup complete!${NC}"
 echo -e "${YELLOW}Creating initial deployment...${NC}"
 
+# Function to check if branch already exists
+check_branch_exists() {
+    aws amplify list-branches --app-id "$APP_ID" --region "$REGION" --profile "$AWS_PROFILE" --query "branches[?branchName=='$BRANCH'].branchName" --output text
+}
+
+# Check if branch exists
+BRANCH_EXISTS=$(check_branch_exists)
+if [ -z "$BRANCH_EXISTS" ]; then
+    echo -e "${YELLOW}Creating branch '$BRANCH'...${NC}"
+    aws amplify create-branch --app-id "$APP_ID" --branch-name "$BRANCH" --region "$REGION" --profile "$AWS_PROFILE"
+    echo -e "${GREEN}Branch '$BRANCH' created successfully.${NC}"
+else
+    echo -e "${YELLOW}Branch '$BRANCH' already exists.${NC}"
+fi
+
 # Start the initial deployment
 aws amplify start-job \
     --app-id "$APP_ID" \
