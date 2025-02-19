@@ -1,6 +1,6 @@
 version: 1
 applications:
-  - appRoot: apps/copilot
+  - appRoot: .
     frontend:
       phases:
         preBuild:
@@ -8,11 +8,12 @@ applications:
             - npm install
         build:
           commands:
-            - npm run build
+            - npm run build:copilot
       artifacts:
-        baseDirectory: dist
+        baseDirectory: apps/copilot/dist
         files:
           - "**/*"
       cache:
         paths:
           - "node_modules/**"
+          - "apps/copilot/node_modules/**"
