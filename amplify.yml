@@ -8,14 +8,14 @@ applications:
             - npm install
         build:
           commands:
-            - echo "Checking AWS config values"
-            - echo "Region value: $REGION"
-            - printf "VITE_AWS_ACCESS_KEY_ID=%s\n" "$ACCESS_KEY_ID" >> .env
-            - printf "VITE_AWS_SECRET_ACCESS_KEY=%s\n" "$SECRET_ACCESS_KEY" >> .env
-            - printf "VITE_AWS_KNOWLEDGE_BASE_ID=%s\n" "$KNOWLEDGE_BASE_ID" >> .env
-            - printf "VITE_AWS_REGION=%s\n" "$REGION" >> .env
-            - cat .env | grep -v SECRET  # Debug
-            - npm run build
+            - "echo 'Checking AWS config values'"
+            - "echo 'Region value: $REGION'"
+            - "printf 'VITE_AWS_ACCESS_KEY_ID=%s\n' '$ACCESS_KEY_ID' >> .env"
+            - "printf 'VITE_AWS_SECRET_ACCESS_KEY=%s\n' '$SECRET_ACCESS_KEY' >> .env"
+            - "printf 'VITE_AWS_KNOWLEDGE_BASE_ID=%s\n' '$KNOWLEDGE_BASE_ID' >> .env"
+            - "printf 'VITE_AWS_REGION=%s\n' '$REGION' >> .env"
+            - "cat .env | grep -v SECRET"  # Debug
+            - "npm run build"
       artifacts:
         baseDirectory: dist
         files:
