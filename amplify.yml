@@ -6,18 +6,16 @@ applications:
         preBuild:
           commands:
             - npm install
-            - cd apps/copilot
-            - npm install
         build:
           commands:
             # Create .env file with environment variables
-            - "echo VITE_AWS_ACCESS_KEY_ID=$(secrets.ACCESS_KEY_ID) >> .env"
-            - "echo VITE_AWS_SECRET_ACCESS_KEY=$(secrets.SECRET_ACCESS_KEY) >> .env"
-            - "echo VITE_AWS_KNOWLEDGE_BASE_ID=$KNOWLEDGE_BASE_ID >> .env"
-            - "echo VITE_AWS_REGION=$REGION >> .env"
-            - "echo 'Contents of .env file (excluding secrets):'"
-            - "cat .env | grep -v SECRET"
-            - "npm run build"
+            - echo "VITE_AWS_ACCESS_KEY_ID=${secrets.ACCESS_KEY_ID}" >> .env
+            - echo "VITE_AWS_SECRET_ACCESS_KEY=${secrets.SECRET_ACCESS_KEY}" >> .env
+            - echo "VITE_AWS_KNOWLEDGE_BASE_ID=$KNOWLEDGE_BASE_ID" >> .env
+            - echo "VITE_AWS_REGION=$REGION" >> .env
+            - echo 'Contents of .env file (excluding secrets):'
+            - cat .env | grep -v SECRET
+            - npm run build
       artifacts:
         baseDirectory: dist
         files:
