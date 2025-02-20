@@ -45,6 +45,12 @@ class BedrockService {
     this.agentClient = new BedrockAgentRuntimeClient(awsConfig);
     this.runtimeClient = new BedrockRuntimeClient(awsConfig);
     this.knowledgeBaseId = knowledgeBaseId;
+    console.log('BedrockService constructor - env vars:', {
+        region: import.meta.env.VITE_AWS_REGION,
+        hasAccessKey: !!import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+        accessKeyLength: import.meta.env.VITE_AWS_ACCESS_KEY_ID?.length,
+        hasSecretKey: !!import.meta.env.VITE_AWS_SECRET_ACCESS_KEY
+    });
     console.log('BedrockService constructor accessKey', '[' + awsConfig.credentials.accessKeyId.substring(0, 12) + ']');
   }
 
