@@ -8,14 +8,11 @@ applications:
             - npm install
         build:
           commands:
-            - "echo 'Checking environment variables:'"
-            - "printenv | grep -E 'ACCESS_KEY_ID|REGION|KNOWLEDGE_BASE_ID' | grep -v SECRET"
-            - "echo '-------------------------------------'"
             # Create .env file with environment variables
-            - "echo VITE_AWS_ACCESS_KEY_ID=${ACCESS_KEY_ID} >> .env"
-            - "echo VITE_AWS_SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY} >> .env"
-            - "echo VITE_AWS_KNOWLEDGE_BASE_ID=${KNOWLEDGE_BASE_ID} >> .env"
-            - "echo VITE_AWS_REGION=${REGION} >> .env"
+            - "echo VITE_AWS_ACCESS_KEY_ID=$(secrets.get.ACCESS_KEY_ID) >> .env"
+            - "echo VITE_AWS_SECRET_ACCESS_KEY=$(secrets.get.SECRET_ACCESS_KEY) >> .env"
+            - "echo VITE_AWS_KNOWLEDGE_BASE_ID=$KNOWLEDGE_BASE_ID >> .env"
+            - "echo VITE_AWS_REGION=$REGION >> .env"
             - "echo 'Contents of .env file (excluding secrets):'"
             - "cat .env | grep -v SECRET"
             - "npm run build"
