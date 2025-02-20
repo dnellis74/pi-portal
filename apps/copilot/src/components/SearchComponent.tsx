@@ -59,11 +59,11 @@ const SearchComponent = ({ setSelectedText }: SearchComponentProps) => {
   return (
     <div className="search-column">
       <h4>Document Search</h4>
-      <Form.Control
+      <input
         id="search-input"
         type="text"
         placeholder="Search documents..."
-        className="mt-2"
+        className="form-control mt-2"
         onChange={(e) => handleSearch(e.target.value)}
       />
       <div className="search-results">

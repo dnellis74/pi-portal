@@ -1,3 +1,4 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Row, Col, Navbar } from 'react-bootstrap';
 import { useState } from 'react';
 import CenterContent from './components/CenterContent';
