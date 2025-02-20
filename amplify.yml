@@ -9,8 +9,8 @@ applications:
         build:
           commands:
             # Create .env file with environment variables
-            - "echo VITE_AWS_ACCESS_KEY_ID=$(secrets.get.ACCESS_KEY_ID) >> .env"
-            - "echo VITE_AWS_SECRET_ACCESS_KEY=$(secrets.get.SECRET_ACCESS_KEY) >> .env"
+            - "echo VITE_AWS_ACCESS_KEY_ID=$(secrets.ACCESS_KEY_ID) >> .env"
+            - "echo VITE_AWS_SECRET_ACCESS_KEY=$(secrets.SECRET_ACCESS_KEY) >> .env"
             - "echo VITE_AWS_KNOWLEDGE_BASE_ID=$KNOWLEDGE_BASE_ID >> .env"
             - "echo VITE_AWS_REGION=$REGION >> .env"
             - "echo 'Contents of .env file (excluding secrets):'"
