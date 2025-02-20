@@ -2,7 +2,11 @@ import { Form } from 'react-bootstrap';
 import { useState } from 'react';
 import { Citation, bedrockService } from '../services/BedrockService';
 
-const SearchComponent = () => {
+interface SearchComponentProps {
+  setSelectedText: (text: string[]) => void;
+}
+
+const SearchComponent = ({ setSelectedText }: SearchComponentProps) => {
   const [searchResults, setSearchResults] = useState<Citation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -13,9 +17,14 @@ const SearchComponent = () => {
     try {
       const citations = await bedrockService.searchDocuments(searchTerm);
       setSearchResults(citations);
+      // Update selectedText with the content from all citations
+      const newSelectedText = citations.map(citation => citation.content.text);
+      console.log('Setting selectedText to:', newSelectedText);
+      setSelectedText(newSelectedText);
     } catch (error) {
       console.error('Error searching Knowledge Base:', error);
       setSearchResults([]);
+      setSelectedText([]);
     } finally {
       setIsSearching(false);
     }
@@ -23,7 +32,7 @@ const SearchComponent = () => {
 
   const renderCitation = (citation: Citation, index: number) => {
     const metadata = citation.metadata || {};
-    //const content = citation.content || { text: 'No content available' };
+    const content = citation.content || { text: 'No content available' };
     const location = citation.location?.kendraDocumentLocation?.uri || '#';
 
     return (
