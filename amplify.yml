@@ -16,7 +16,6 @@ applications:
             - echo "VITE_AWS_REGION=$REGION" >> .env
             - echo 'Contents of .env file (excluding secrets):'
             - cat .env | grep -v SECRET
-            - pwd
             - npm run build
       artifacts:
         baseDirectory: dist
