@@ -11,9 +11,9 @@ applications:
             # Add debug logging to verify values are present
             - "echo 'Checking AWS config values'"
             - "echo 'Region value ${REGION}'"
-            #- "echo 'VITE_AWS_ACCESS_KEY_ID=${secrets.ACCESS_KEY_ID}' >> .env"
-            #- "echo 'VITE_AWS_SECRET_ACCESS_KEY=${secrets.SECRET_ACCESS_KEY}' >> .env"
-            #- "echo 'VITE_AWS_KNOWLEDGE_BASE_ID=${KNOWLEDGE_BASE_ID}' >> .env"
+            - "echo 'VITE_AWS_ACCESS_KEY_ID=${secrets.ACCESS_KEY_ID}' >> .env"
+            - "echo 'VITE_AWS_SECRET_ACCESS_KEY=${secrets.SECRET_ACCESS_KEY}' >> .env"
+            - "echo 'VITE_AWS_KNOWLEDGE_BASE_ID=${KNOWLEDGE_BASE_ID}' >> .env"
             - "echo 'VITE_AWS_REGION=${REGION}' >> .env"
             - "cat .env | grep -v SECRET"  # Debug
             - "npm run build"
