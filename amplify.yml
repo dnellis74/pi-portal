@@ -9,14 +9,14 @@ applications:
         build:
           commands:
             # Create .env file with environment variables
-            - env
+            - env | sort
             - echo "VITE_AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID" >> .env
             - echo "VITE_AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY" >> .env
             - echo "VITE_AWS_KNOWLEDGE_BASE_ID=$KNOWLEDGE_BASE_ID" >> .env
             - echo "VITE_AWS_REGION=$REGION" >> .env
             - echo 'Contents of .env file (excluding secrets):'
             - cat .env | grep -v SECRET
-            - npm run build:copilot
+            - "npm run build:copilot"
       artifacts:
         baseDirectory: dist
         files:
