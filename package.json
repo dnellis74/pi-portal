@@ -14,6 +14,7 @@
     "npm": ">=8"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.750.0",
     "bootstrap": "^5.3.3",
     "react-bootstrap": "^2.10.9",
     "react-chatbotify": "^2.0.0-beta.30"

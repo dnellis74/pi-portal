@@ -1,4 +1,5 @@
-import { Container, Row, Col, Navbar, Form } from 'react-bootstrap';
+import { Container, Row, Col, Navbar } from 'react-bootstrap';
+import CenterContent from './components/CenterContent';
 import './App.css';
 
 function App() {
@@ -17,39 +18,7 @@ function App() {
           <Row>Search History</Row>
         </Col>
         <Col md={10}>
-          {/* Center Content */}
-          <div className="center-content">
-            <Row>
-              <Col md={6}>
-                <div className="search-column">
-                  <h4>Document Search</h4>
-                  <Form.Control
-                    type="text"
-                    placeholder="Search documents..."
-                    className="mt-2"
-                  />
-                  <div className="search-results">
-                    {/* Search results will be displayed here */}
-                    <p className="text-muted">Enter a search term to see results</p>
-                  </div>
-                </div>
-              </Col>
-              <Col md={6}>
-                <div className="search-column">
-                  <h4>Document Chat</h4>
-                  <Form.Control
-                    type="text"
-                    placeholder="How can I help?"
-                    className="mt-2"
-                  />
-                  <div className="chat-results">
-                    {/* Chat messages will be displayed here */}
-                    <p className="text-muted">Start a conversation by typing a message</p>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-          </div>
+          <CenterContent />
         </Col>
       </Row>
 
