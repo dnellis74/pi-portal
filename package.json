@@ -12,5 +12,10 @@
   "engines": {
     "node": ">=18",
     "npm": ">=8"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "react-bootstrap": "^2.10.9",
+    "react-chatbotify": "^2.0.0-beta.30"
   }
-} 
+}
