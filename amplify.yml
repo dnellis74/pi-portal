@@ -8,7 +8,6 @@ applications:
             - npm install
         build:
           commands:
-            # Add debug logging to verify values are present
             - "echo 'Checking AWS config values'"
             - "echo 'Region value $REGION'"
             - "echo 'VITE_AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID' >> .env"
