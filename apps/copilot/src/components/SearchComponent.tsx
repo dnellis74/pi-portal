@@ -23,7 +23,7 @@ const SearchComponent = () => {
 
   const renderCitation = (citation: Citation, index: number) => {
     const metadata = citation.metadata || {};
-    const content = citation.content || { text: 'No content available' };
+    //const content = citation.content || { text: 'No content available' };
     const location = citation.location?.kendraDocumentLocation?.uri || '#';
 
     return (

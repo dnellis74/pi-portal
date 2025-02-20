@@ -55,7 +55,7 @@ class BedrockService {
       return response.retrievalResults?.map(result => ({
         content: result.content as DocumentContent,
         location: result.location as DocumentLocation,
-        metadata: result.metadata as DocumentMetadata,
+        metadata: result.metadata as unknown as DocumentMetadata,
         score: result.score || 0
       })) || [];
     } catch (error) {
