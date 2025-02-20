@@ -45,7 +45,7 @@ class BedrockService {
     this.agentClient = new BedrockAgentRuntimeClient(awsConfig);
     this.runtimeClient = new BedrockRuntimeClient(awsConfig);
     this.knowledgeBaseId = knowledgeBaseId;
-    console.log('BedrockService constructor accessKey', awsConfig.credentials.accessKeyId);
+    console.log('BedrockService constructor accessKey', '[' + awsConfig.credentials.accessKeyId.substring(0, 12) + ']');
   }
 
   async searchDocuments(searchTerm: string): Promise<Citation[]> {
