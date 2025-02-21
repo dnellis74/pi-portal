@@ -1,7 +1,8 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Row, Col, Navbar } from 'react-bootstrap';
 import { useState } from 'react';
-import CenterContent from './components/CenterContent';
+import SearchComponent from './components/SearchComponent';
+import ChatComponent from './components/ChatComponent';
 import DocumentTypeFilters from './components/DocumentTypeFilters';
 import { DocumentTypeInfo } from './types/SearchTypes';
 import './App.css';
@@ -34,13 +35,19 @@ function App() {
           <Row>Search History</Row>
         </Col>
         <Col md={10}>
-          <CenterContent 
-            selectedText={selectedText} 
-            setSelectedText={setSelectedText}
-            setDocumentTypes={setDocumentTypes}
-            onTypeSelect={handleTypeSelect}
-            documentTypes={documentTypes}
-          />
+          {/* Center Content */}
+          <Row>
+            <Col md={6}>
+              <SearchComponent 
+                setSelectedText={setSelectedText} 
+                setDocumentTypes={setDocumentTypes}
+                documentTypes={documentTypes}
+              />
+            </Col>
+            <Col md={6}>
+              <ChatComponent selectedText={selectedText} />
+            </Col>
+          </Row>
         </Col>
       </Row>
 

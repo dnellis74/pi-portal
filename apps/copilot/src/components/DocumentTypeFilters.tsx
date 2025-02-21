@@ -10,10 +10,10 @@ interface DocumentTypeFiltersProps {
 const DocumentTypeFilters: React.FC<DocumentTypeFiltersProps> = ({ documentTypes, onTypeSelect }) => {
   return (
     <div>
-      <h6>Document Types</h6>
+      <div text-align="left">Document Types</div>
       <ul className="list-unstyled">
         {Array.from(documentTypes.entries()).map(([type, info]) => (
-          <li key={type} className="mb-1">
+          <li text-align="left" key={type} className="mb-1">
             <Form.Check
               type="checkbox"
               id={`filter-${type}`}

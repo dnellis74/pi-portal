@@ -49,7 +49,6 @@ const SearchResult = ({ citation, index, isSelected, onSelect }: SearchResultPro
 interface SearchComponentProps {
   setSelectedText: (text: string[]) => void;
   setDocumentTypes: (types: Map<string, DocumentTypeInfo>) => void;
-  onTypeSelect: (type: string, selected: boolean) => void;
   documentTypes: Map<string, DocumentTypeInfo>;
 }
 

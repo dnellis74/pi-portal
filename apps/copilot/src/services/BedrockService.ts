@@ -61,7 +61,7 @@ class BedrockService {
         retrievalQuery: { text: searchTerm },
         retrievalConfiguration: {
           vectorSearchConfiguration: {
-            numberOfResults: 5
+            numberOfResults: 50
           }
         }
       });
