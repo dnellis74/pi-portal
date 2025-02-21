@@ -1,6 +1,8 @@
 import { Form } from 'react-bootstrap';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Citation, bedrockService } from '../services/BedrockService';
+import { SelectedDocumentsState, DocumentTypeInfo } from '../types/SearchTypes';
+import DocumentTypeFilters from './DocumentTypeFilters';
 
 interface SearchResultProps {
   citation: Citation;
@@ -28,7 +30,7 @@ const SearchResult = ({ citation, index, isSelected, onSelect }: SearchResultPro
             </div>
             <div className="text-muted small">
               <span>Relevance: {(citation.score * 100).toFixed(1)}% ({metadata['x-amz-kendra-score-confidence'] || 'N/A'})</span>
-              <span className="ms-2">Category: {metadata._category || 'Uncategorized'}</span>
+              <span className="ms-2">Doc Type: {metadata._category || 'Uncategorized'}</span>
             </div>
             {location !== '#' && (
               <div className="mt-2 small">
@@ -46,45 +48,119 @@ const SearchResult = ({ citation, index, isSelected, onSelect }: SearchResultPro
 
 interface SearchComponentProps {
   setSelectedText: (text: string[]) => void;
+  setDocumentTypes: (types: Map<string, DocumentTypeInfo>) => void;
+  onTypeSelect: (type: string, selected: boolean) => void;
+  documentTypes: Map<string, DocumentTypeInfo>;
 }
 
-const SearchComponent = ({ setSelectedText }: SearchComponentProps) => {
+const SearchComponent = ({ setSelectedText, setDocumentTypes, onTypeSelect, documentTypes }: SearchComponentProps) => {
   const [searchResults, setSearchResults] = useState<Citation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedCitations, setSelectedCitations] = useState<Set<number>>(new Set());
+  const [selectedDocs, setSelectedDocs] = useState<SelectedDocumentsState>({
+    selectedIndices: new Set<number>(),
+    selectedTexts: [],
+    documentTypes: new Map<string, DocumentTypeInfo>()
+  });
+
+  useEffect(() => {
+    // Update selected documents when document types change
+    const newSelectedIndices = new Set<number>();
+    searchResults.forEach((citation, index) => {
+      const docType = citation.metadata?._category || 'Uncategorized';
+      const typeInfo = documentTypes.get(docType);
+      if (typeInfo?.selected) {
+        newSelectedIndices.add(index);
+      }
+    });
+
+    const newSelectedTexts = Array.from(newSelectedIndices)
+      .map(idx => searchResults[idx].content.text);
+
+    setSelectedDocs({
+      selectedIndices: newSelectedIndices,
+      selectedTexts: newSelectedTexts,
+      documentTypes: selectedDocs.documentTypes
+    });
+    setSelectedText(newSelectedTexts);
+  }, [documentTypes, searchResults]);
+
+  const updateDocumentTypesFromResults = (citations: Citation[]) => {
+    const types = new Map<string, DocumentTypeInfo>();
+    citations.forEach(citation => {
+      const docType = citation.metadata?._category || 'Uncategorized';
+      const currentInfo = types.get(docType);
+      types.set(docType, {
+        count: (currentInfo?.count || 0) + 1,
+        selected: false
+      });
+    });
+    setDocumentTypes(types);
+  };
 
   const handleSearch = async (searchTerm: string) => {
-    if (!searchTerm.trim()) return;
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      setSelectedDocs({
+        selectedIndices: new Set<number>(),
+        selectedTexts: [],
+        documentTypes: new Map<string, DocumentTypeInfo>()
+      });
+      setSelectedText([]);
+      setDocumentTypes(new Map());
+      return;
+    }
     
     setIsSearching(true);
     try {
       const citations = await bedrockService.searchDocuments(searchTerm);
       setSearchResults(citations);
+      updateDocumentTypesFromResults(citations);
       // Clear selections when new search is performed
-      setSelectedCitations(new Set());
+      setSelectedDocs({
+        selectedIndices: new Set<number>(),
+        selectedTexts: [],
+        documentTypes: new Map<string, DocumentTypeInfo>()
+      });
       setSelectedText([]);
     } catch (error) {
       console.error('Error searching Knowledge Base:', error);
       setSearchResults([]);
-      setSelectedCitations(new Set());
+      setSelectedDocs({
+        selectedIndices: new Set<number>(),
+        selectedTexts: [],
+        documentTypes: new Map<string, DocumentTypeInfo>()
+      });
       setSelectedText([]);
+      setDocumentTypes(new Map());
     } finally {
       setIsSearching(false);
     }
   };
 
   const handleCitationSelect = (index: number, checked: boolean) => {
-    const newSelectedCitations = new Set(selectedCitations);
-    if (checked) {
-      newSelectedCitations.add(index);
-    } else {
-      newSelectedCitations.delete(index);
-    }
-    setSelectedCitations(newSelectedCitations);
+    const citation = searchResults[index];
+    
+    const newSelectedDocs = { ...selectedDocs };
+    const newSelectedIndices = new Set(newSelectedDocs.selectedIndices);
 
-    // Update selected text based on selected citations
-    const selectedTexts = Array.from(newSelectedCitations).map(idx => searchResults[idx].content.text);
-    setSelectedText(selectedTexts);
+    if (checked) {
+      newSelectedIndices.add(index);
+    } else {
+      newSelectedIndices.delete(index);
+    }
+
+    // Update selected texts
+    const newSelectedTexts = Array.from(newSelectedIndices)
+      .map(idx => searchResults[idx].content.text);
+
+    const updatedSelectedDocs = {
+      selectedIndices: newSelectedIndices,
+      selectedTexts: newSelectedTexts,
+      documentTypes: selectedDocs.documentTypes
+    };
+
+    setSelectedDocs(updatedSelectedDocs);
+    setSelectedText(newSelectedTexts);
   };
 
   return (
@@ -107,7 +183,7 @@ const SearchComponent = ({ setSelectedText }: SearchComponentProps) => {
                 key={index}
                 citation={citation}
                 index={index}
-                isSelected={selectedCitations.has(index)}
+                isSelected={selectedDocs.selectedIndices.has(index)}
                 onSelect={handleCitationSelect}
               />
             ))}

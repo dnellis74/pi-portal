@@ -2,10 +2,22 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Row, Col, Navbar } from 'react-bootstrap';
 import { useState } from 'react';
 import CenterContent from './components/CenterContent';
+import DocumentTypeFilters from './components/DocumentTypeFilters';
+import { DocumentTypeInfo } from './types/SearchTypes';
 import './App.css';
 
 function App() {
   const [selectedText, setSelectedText] = useState<string[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<Map<string, DocumentTypeInfo>>(new Map());
+
+  const handleTypeSelect = (type: string, selected: boolean) => {
+    const newTypes = new Map(documentTypes);
+    const typeInfo = newTypes.get(type);
+    if (typeInfo) {
+      newTypes.set(type, { ...typeInfo, selected });
+      setDocumentTypes(newTypes);
+    }
+  };
 
   return (
     <Container fluid>
@@ -18,11 +30,17 @@ function App() {
       <Row className="flex-grow-1">
         <Col md={2} className="bg-light">
           {/* Left Sidebar */}
-          <Row>Filters</Row>
+          <Row><DocumentTypeFilters documentTypes={documentTypes} onTypeSelect={handleTypeSelect} /></Row>            
           <Row>Search History</Row>
         </Col>
         <Col md={10}>
-          <CenterContent selectedText={selectedText} setSelectedText={setSelectedText} />
+          <CenterContent 
+            selectedText={selectedText} 
+            setSelectedText={setSelectedText}
+            setDocumentTypes={setDocumentTypes}
+            onTypeSelect={handleTypeSelect}
+            documentTypes={documentTypes}
+          />
         </Col>
       </Row>
 
