@@ -53,7 +53,7 @@ interface SearchComponentProps {
   documentTypes: Map<string, DocumentTypeInfo>;
 }
 
-const SearchComponent = ({ setSelectedText, setDocumentTypes, onTypeSelect, documentTypes }: SearchComponentProps) => {
+const SearchComponent = ({ setSelectedText, setDocumentTypes, documentTypes }: SearchComponentProps) => {
   const [searchResults, setSearchResults] = useState<Citation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedDocs, setSelectedDocs] = useState<SelectedDocumentsState>({
