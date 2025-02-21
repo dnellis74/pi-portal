@@ -64,12 +64,20 @@ const SearchComponent = ({ setSelectedText, setDocumentTypes, onTypeSelect, docu
 
   useEffect(() => {
     // Update selected documents when document types change
-    const newSelectedIndices = new Set<number>();
+    const newSelectedIndices = new Set(selectedDocs.selectedIndices);
+    
+    // Find all documents of each type and update their selection state
     searchResults.forEach((citation, index) => {
       const docType = citation.metadata?._category || 'Uncategorized';
       const typeInfo = documentTypes.get(docType);
-      if (typeInfo?.selected) {
-        newSelectedIndices.add(index);
+      
+      // Only update selection if this document's type exists in documentTypes (was changed)
+      if (documentTypes.has(docType)) {
+        if (typeInfo?.selected) {
+          newSelectedIndices.add(index);
+        } else {
+          newSelectedIndices.delete(index);
+        }
       }
     });
 
