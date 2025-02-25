@@ -170,3 +170,16 @@ html, body, #root {
 .read-the-docs {
   color: #888;
 }
+
+/* Checkbox styling */
+.form-check-input {
+  border: 2px solid black !important;
+}
+
+/* Search result styling */
+.search-result-item {
+  border: 2px solid black !important;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 4px;
+}

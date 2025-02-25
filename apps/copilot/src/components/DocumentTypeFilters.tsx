@@ -15,6 +15,7 @@ const DocumentTypeFilters: React.FC<DocumentTypeFiltersProps> = ({ documentTypes
         {Array.from(documentTypes.entries()).map(([type, info]) => (
           <li text-align="left" key={type} className="mb-1">
             <Form.Check
+              className="doc-type-filter"
               type="checkbox"
               id={`filter-${type}`}
               checked={info.selected}

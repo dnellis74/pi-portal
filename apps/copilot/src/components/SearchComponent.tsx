@@ -17,7 +17,7 @@ const SearchResult = ({ citation, index, isSelected, onSelect }: SearchResultPro
   const location = citation.location?.kendraDocumentLocation?.uri || '#';
 
   return (
-    <li className="mb-2 p-2 border-bottom">
+    <li className="search-result-item">
       <Form.Check
         type="checkbox"
         id={`citation-${index}`}
@@ -31,6 +31,9 @@ const SearchResult = ({ citation, index, isSelected, onSelect }: SearchResultPro
             <div className="text-muted small">
               <span>Relevance: {(citation.score * 100).toFixed(1)}% ({metadata['x-amz-kendra-score-confidence'] || 'N/A'})</span>
               <span className="ms-2">Doc Type: {metadata._category || 'Uncategorized'}</span>
+            </div>
+            <div className="mt-2 text-muted">
+              {content.text}
             </div>
             {location !== '#' && (
               <div className="mt-2 small">
