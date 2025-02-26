@@ -58,6 +58,7 @@ interface SearchComponentProps {
 const SearchComponent = ({ setSelectedText, setDocumentTypes, documentTypes }: SearchComponentProps) => {
   const [searchResults, setSearchResults] = useState<Citation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedDocs, setSelectedDocs] = useState<SelectedDocumentsState>({
     selectedIndices: new Set<number>(),
     selectedTexts: [],
@@ -179,9 +180,15 @@ const SearchComponent = ({ setSelectedText, setDocumentTypes, documentTypes }: S
       <input
         id="search-input"
         type="text"
-        placeholder="Search documents..."
+        placeholder="Press enter to search documents..."
         className="form-control mt-2"
-        onChange={(e) => handleSearch(e.target.value)}
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            handleSearch(searchTerm);
+          }
+        }}
       />
       <div className="search-results">
         {isSearching ? (
