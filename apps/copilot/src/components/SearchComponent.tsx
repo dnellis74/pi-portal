@@ -2,7 +2,6 @@ import { Form } from 'react-bootstrap';
 import { useState, useEffect } from 'react';
 import { Citation, bedrockService } from '../services/BedrockService';
 import { SelectedDocumentsState, DocumentTypeInfo } from '../types/SearchTypes';
-import DocumentTypeFilters from './DocumentTypeFilters';
 
 interface SearchResultProps {
   citation: Citation;
@@ -93,7 +92,7 @@ const SearchComponent = ({ setSelectedText, setDocumentTypes, documentTypes }: S
       documentTypes: selectedDocs.documentTypes
     });
     setSelectedText(newSelectedTexts);
-  }, [documentTypes, searchResults]);
+  }, [documentTypes, searchResults, selectedDocs.documentTypes, selectedDocs.selectedIndices, setSelectedText]);
 
   const updateDocumentTypesFromResults = (citations: Citation[]) => {
     const types = new Map<string, DocumentTypeInfo>();
@@ -149,7 +148,6 @@ const SearchComponent = ({ setSelectedText, setDocumentTypes, documentTypes }: S
   };
 
   const handleCitationSelect = (index: number, checked: boolean) => {
-    const citation = searchResults[index];
     
     const newSelectedDocs = { ...selectedDocs };
     const newSelectedIndices = new Set(newSelectedDocs.selectedIndices);
@@ -195,15 +193,25 @@ const SearchComponent = ({ setSelectedText, setDocumentTypes, documentTypes }: S
           <p>Searching...</p>
         ) : searchResults.length > 0 ? (
           <ul className="list-unstyled">
-            {searchResults.map((citation, index) => (
-              <SearchResult
-                key={index}
-                citation={citation}
-                index={index}
-                isSelected={selectedDocs.selectedIndices.has(index)}
-                onSelect={handleCitationSelect}
-              />
-            ))}
+            {(() => {
+              const hasSelectedTypes = Array.from(documentTypes.values()).some(info => info.selected);
+              const visibleResults = hasSelectedTypes 
+                ? searchResults.filter(citation => {
+                    const docType = citation.metadata?._category || 'Uncategorized';
+                    return documentTypes.get(docType)?.selected ?? false;
+                  })
+                : searchResults;
+
+              return visibleResults.map((citation, index) => (
+                <SearchResult
+                  key={index}
+                  citation={citation}
+                  index={searchResults.indexOf(citation)}
+                  isSelected={selectedDocs.selectedIndices.has(searchResults.indexOf(citation))}
+                  onSelect={handleCitationSelect}
+                />
+              ));
+            })()}
           </ul>
         ) : (
           <p className="text-muted">Enter a search term to see results</p>
