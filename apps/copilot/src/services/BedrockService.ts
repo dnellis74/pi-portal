@@ -36,7 +36,7 @@ export interface ChatMessage {
   content: string;
 }
 
-class BedrockService {
+export class BedrockService {
   private agentClient: BedrockAgentRuntimeClient;
   private runtimeClient: BedrockRuntimeClient;
   private knowledgeBaseId: string;
@@ -134,6 +134,38 @@ Remember to use this context to provide accurate and relevant information while 
       return responseBody.content[0].text;
     } catch (error) {
       console.error('Error sending chat message:', error);
+      throw error;
+    }
+  }
+
+  async generateFromDocuments(documentUrls: string[]): Promise<string> {
+    try {
+      const payload = {
+        anthropic_version: 'bedrock-2023-05-31',
+        messages: [{
+          role: 'user',
+          content: [{ 
+            type: 'text', 
+            text: `Process the following documents: ${documentUrls.join('\n')}`
+          }]
+        }],
+        max_tokens: 2000,
+        temperature: 0.7,
+        top_p: 0.9,
+      };
+
+      const command = new InvokeModelCommand({
+        modelId: 'anthropic.claude-3-5-sonnet-20240620-v1:0',
+        contentType: 'application/json',
+        accept: 'application/json',
+        body: JSON.stringify(payload)
+      });
+
+      const response = await this.runtimeClient.send(command);
+      const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+      return responseBody.content[0].text;
+    } catch (error) {
+      console.error('Error in generative call:', error);
       throw error;
     }
   }

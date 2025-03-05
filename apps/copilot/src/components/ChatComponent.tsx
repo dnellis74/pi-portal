@@ -1,9 +1,13 @@
 import { Form } from 'react-bootstrap';
-import { useState, KeyboardEvent, useEffect, useRef } from 'react';
+import { useState, KeyboardEvent, useEffect, useRef, Dispatch, SetStateAction } from 'react';
 import { ChatMessage, bedrockService } from '../services/BedrockService';
 
-const ChatComponent = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+interface ChatComponentProps {
+  messages: ChatMessage[];
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+}
+
+const ChatComponent = ({ messages, setMessages }: ChatComponentProps) => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);

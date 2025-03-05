@@ -3,11 +3,14 @@ import { useState } from 'react';
 import SearchComponent from './components/SearchComponent';
 import ChatComponent from './components/ChatComponent';
 import DocumentTypeFilters from './components/DocumentTypeFilters';
-import { DocumentTypeInfo } from './types/SearchTypes';
+import { DocumentTypeInfo, SelectedDocument } from './types/SearchTypes';
+import { ChatMessage } from './services/BedrockService';
 import './App.css';
 
 function App() {
   const [documentTypes, setDocumentTypes] = useState<Map<string, DocumentTypeInfo>>(new Map());
+  const [selectedDocuments, setSelectedDocuments] = useState<SelectedDocument[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const handleTypeSelect = (type: string, selected: boolean) => {
     const newTypes = new Map(documentTypes);
@@ -16,6 +19,18 @@ function App() {
       newTypes.set(type, { ...typeInfo, selected });
       setDocumentTypes(newTypes);
     }
+  };
+
+  const handleSelectedDocumentsChange = (documents: SelectedDocument[]) => {
+    setSelectedDocuments(documents);
+  };
+
+  const handleGeneratedContent = (content: string) => {
+    const newMessage: ChatMessage = {
+      role: 'assistant',
+      content: content
+    };
+    setMessages(prev => [...prev, newMessage]);
   };
 
   return (
@@ -29,8 +44,7 @@ function App() {
       <Row className="flex-grow-1">
         <Col md={2} className="bg-light">
           {/* Left Sidebar */}
-          <Row><DocumentTypeFilters documentTypes={documentTypes} onTypeSelect={handleTypeSelect} /></Row>            
-          <Row>Search History</Row>
+          <DocumentTypeFilters documentTypes={documentTypes} onTypeSelect={handleTypeSelect} />
         </Col>
         <Col md={10}>
           {/* Center Content */}
@@ -39,10 +53,16 @@ function App() {
               <SearchComponent 
                 setDocumentTypes={setDocumentTypes}
                 documentTypes={documentTypes}
+                onSelectedDocumentsChange={handleSelectedDocumentsChange}
+                selectedDocuments={selectedDocuments}
+                onGeneratedContent={handleGeneratedContent}
               />
             </Col>
             <Col md={6}>
-              <ChatComponent />
+              <ChatComponent 
+                messages={messages}
+                setMessages={setMessages}
+              />
             </Col>
           </Row>
         </Col>

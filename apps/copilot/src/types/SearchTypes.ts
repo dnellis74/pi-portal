@@ -4,6 +4,7 @@ export interface DocumentInfo {
   documentType: string;
   uri?: string;
   citations: Citation[];
+  selected?: boolean;
 }
 
 export interface Citation {
@@ -29,7 +30,17 @@ export interface DocumentTypeInfo {
   selected: boolean;
 }
 
+export interface SelectedDocument {
+  uri: string;
+  documentType: string;
+  title: string;
+}
+
 export interface SearchState {
   documents: Map<string, DocumentInfo>;
   documentTypes: Map<string, DocumentTypeInfo>;
+}
+
+export interface SearchComponentState extends SearchState {
+  selectedDocuments: Set<string>; // Set of URIs
 } 
