@@ -61,7 +61,7 @@ export class BedrockService {
         retrievalQuery: { text: searchTerm },
         retrievalConfiguration: {
           vectorSearchConfiguration: {
-            numberOfResults: 50
+            numberOfResults: 100
           }
         }
       });
@@ -158,7 +158,7 @@ Remember to use this context to provide accurate and relevant information while 
             modelArn: "anthropic.claude-3-5-sonnet-20240620-v1:0",
             retrievalConfiguration: {
               vectorSearchConfiguration: {
-                numberOfResults: 5,
+                numberOfResults: 100,
                 filter: {
                   orAll: orAllFilters
                 }
