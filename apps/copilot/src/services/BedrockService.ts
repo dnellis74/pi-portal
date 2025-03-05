@@ -1,4 +1,4 @@
-import { BedrockAgentRuntimeClient, RetrieveCommand } from '@aws-sdk/client-bedrock-agent-runtime';
+import { BedrockAgentRuntimeClient, RetrieveCommand, RetrieveAndGenerateCommand } from '@aws-sdk/client-bedrock-agent-runtime';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import { awsConfig, bedrockConfig } from '../config/aws-config';
 
@@ -138,32 +138,38 @@ Remember to use this context to provide accurate and relevant information while 
     }
   }
 
-  async generateFromDocuments(documentUrls: string[]): Promise<string> {
+  async generateFromDocuments(documentUrls: string[], searchQuery: string): Promise<string> {
     try {
-      const payload = {
-        anthropic_version: 'bedrock-2023-05-31',
-        messages: [{
-          role: 'user',
-          content: [{ 
-            type: 'text', 
-            text: `Process the following documents: ${documentUrls.join('\n')}`
-          }]
-        }],
-        max_tokens: 2000,
-        temperature: 0.7,
-        top_p: 0.9,
-      };
+      const orAllFilters = documentUrls.map(url => ({
+        equals: {
+          key: "pi_url",
+          value: url
+        }
+      }));
 
-      const command = new InvokeModelCommand({
-        modelId: 'anthropic.claude-3-5-sonnet-20240620-v1:0',
-        contentType: 'application/json',
-        accept: 'application/json',
-        body: JSON.stringify(payload)
+      const command = new RetrieveAndGenerateCommand({
+        input: {
+          text: searchQuery
+        },
+        retrieveAndGenerateConfiguration: {
+          type: "KNOWLEDGE_BASE",
+          knowledgeBaseConfiguration: {
+            knowledgeBaseId: this.knowledgeBaseId,
+            modelArn: "anthropic.claude-3-5-sonnet-20240620-v1:0",
+            retrievalConfiguration: {
+              vectorSearchConfiguration: {
+                numberOfResults: 5,
+                filter: {
+                  orAll: orAllFilters
+                }
+              }
+            }
+          }
+        }
       });
 
-      const response = await this.runtimeClient.send(command);
-      const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-      return responseBody.content[0].text;
+      const response = await this.agentClient.send(command);
+      return response.output?.text || 'No response generated';
     } catch (error) {
       console.error('Error in generative call:', error);
       throw error;

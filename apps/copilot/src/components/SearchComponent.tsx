@@ -62,7 +62,6 @@ const SearchComponent = ({
   const [isSearching, setIsSearching] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [generatedResult, setGeneratedResult] = useState<string | null>(null);
 
   // Initialize and update selectedDocumentMap when selectedDocuments changes
   useEffect(() => {
@@ -248,7 +247,7 @@ const SearchComponent = ({
     setIsGenerating(true);
 
     try {
-      const result = await bedrockService.generateFromDocuments(selectedUrls);
+      const result = await bedrockService.generateFromDocuments(selectedUrls, searchTerm);
       onGeneratedContent(result);
     } catch (error) {
       console.error('Error generating from documents:', error);
@@ -302,13 +301,6 @@ const SearchComponent = ({
           >
             {isGenerating ? 'Generating...' : 'Generate from Selected Documents'}
           </Button>
-        </div>
-      )}
-
-      {generatedResult && (
-        <div className="mb-3 p-3 bg-light border rounded">
-          <h6>Generated Result:</h6>
-          <div className="text-muted">{generatedResult}</div>
         </div>
       )}
 
