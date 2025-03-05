@@ -1,121 +1,103 @@
-import { Form } from 'react-bootstrap';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Citation, bedrockService } from '../services/BedrockService';
-import { SelectedDocumentsState, DocumentTypeInfo } from '../types/SearchTypes';
+import { DocumentTypeInfo, SearchState, DocumentInfo } from '../types/SearchTypes';
 
-interface SearchResultProps {
-  citation: Citation;
-  index: number;
-  isSelected: boolean;
-  onSelect: (index: number, checked: boolean) => void;
+interface DocumentResultProps {
+  document: DocumentInfo;
 }
 
-const SearchResult = ({ citation, index, isSelected, onSelect }: SearchResultProps) => {
-  const metadata = citation.metadata || {};
-  const content = citation.content || { text: 'No content available' };
-  const location = citation.location?.kendraDocumentLocation?.uri || '#';
-
+const DocumentResult = ({ document }: DocumentResultProps) => {
   return (
     <li className="search-result-item">
-      <Form.Check
-        type="checkbox"
-        id={`citation-${index}`}
-        checked={isSelected}
-        onChange={(e) => onSelect(index, e.target.checked)}
-        label={
-          <div>
-            <div className="fw-bold">
-              {metadata['x-amz-kendra-document-title'] || metadata.title || 'Untitled Document'}
-            </div>
-            <div className="text-muted small">
-              <span>Relevance: {(citation.score * 100).toFixed(1)}% ({metadata['x-amz-kendra-score-confidence'] || 'N/A'})</span>
-              <span className="ms-2">Doc Type: {metadata._category || 'Uncategorized'}</span>
-            </div>
-            <div className="mt-2 text-muted">
-              {content.text}
-            </div>
-            {location !== '#' && (
-              <div className="mt-2 small">
-                <a href={location} target="_blank" rel="noopener noreferrer">
-                  View Document
-                </a>
-              </div>
-            )}
+      <div>
+        <div className="fw-bold">
+          {document.title}
+        </div>
+        <div className="text-muted small">
+          <span>Document Type: {document.documentType}</span>
+          <span className="ms-2">Citations: {document.citationCount}</span>
+        </div>
+        {document.uri && (
+          <div className="mt-2 small">
+            <a href={document.uri} target="_blank" rel="noopener noreferrer">
+              View Document
+            </a>
           </div>
-        }
-      />
+        )}
+      </div>
     </li>
   );
 };
 
 interface SearchComponentProps {
-  setSelectedText: (text: string[]) => void;
   setDocumentTypes: (types: Map<string, DocumentTypeInfo>) => void;
   documentTypes: Map<string, DocumentTypeInfo>;
 }
 
-const SearchComponent = ({ setSelectedText, setDocumentTypes, documentTypes }: SearchComponentProps) => {
-  const [searchResults, setSearchResults] = useState<Citation[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDocs, setSelectedDocs] = useState<SelectedDocumentsState>({
-    selectedIndices: new Set<number>(),
-    selectedTexts: [],
+const SearchComponent = ({ setDocumentTypes, documentTypes }: SearchComponentProps) => {
+  const [searchState, setSearchState] = useState<SearchState>({
+    documents: new Map<string, DocumentInfo>(),
     documentTypes: new Map<string, DocumentTypeInfo>()
   });
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    // Update selected documents when document types change
-    const newSelectedIndices = new Set(selectedDocs.selectedIndices);
-    
-    // Find all documents of each type and update their selection state
-    searchResults.forEach((citation, index) => {
-      const docType = citation.metadata?._category || 'Uncategorized';
-      const typeInfo = documentTypes.get(docType);
-      
-      // Only update selection if this document's type exists in documentTypes (was changed)
-      if (documentTypes.has(docType)) {
-        if (typeInfo?.selected) {
-          newSelectedIndices.add(index);
-        } else {
-          newSelectedIndices.delete(index);
+  const processSearchResults = (citations: Citation[]) => {
+    const documents = new Map<string, DocumentInfo>();
+    const types = new Map<string, DocumentTypeInfo>();
+    const docTypeCount = new Map<string, Set<string>>();
+
+    citations.forEach(citation => {
+      const docTitle = citation.metadata['x-amz-kendra-document-title'] || 
+                      citation.metadata.title || 
+                      'Untitled Document';
+      const docType = citation.metadata._category || 'Uncategorized';
+      const uri = citation.location?.kendraDocumentLocation?.uri;
+
+      // Update document info
+      const existingDoc = documents.get(docTitle);
+      if (existingDoc) {
+        existingDoc.citationCount++;
+        existingDoc.citations.push(citation);
+        documents.set(docTitle, existingDoc);
+      } else {
+        documents.set(docTitle, {
+          title: docTitle,
+          citationCount: 1,
+          documentType: docType,
+          uri: uri,
+          citations: [citation]
+        });
+
+        // Track unique documents per type
+        if (!docTypeCount.has(docType)) {
+          docTypeCount.set(docType, new Set());
         }
+        docTypeCount.get(docType)?.add(docTitle);
       }
     });
 
-    const newSelectedTexts = Array.from(newSelectedIndices)
-      .map(idx => searchResults[idx].content.text);
-
-    setSelectedDocs({
-      selectedIndices: newSelectedIndices,
-      selectedTexts: newSelectedTexts,
-      documentTypes: selectedDocs.documentTypes
-    });
-    setSelectedText(newSelectedTexts);
-  }, [documentTypes, searchResults, selectedDocs.documentTypes, selectedDocs.selectedIndices, setSelectedText]);
-
-  const updateDocumentTypesFromResults = (citations: Citation[]) => {
-    const types = new Map<string, DocumentTypeInfo>();
-    citations.forEach(citation => {
-      const docType = citation.metadata?._category || 'Uncategorized';
-      const currentInfo = types.get(docType);
+    // Set document type counts based on unique documents
+    docTypeCount.forEach((docs, docType) => {
       types.set(docType, {
-        count: (currentInfo?.count || 0) + 1,
-        selected: false
+        count: docs.size,
+        selected: documentTypes.get(docType)?.selected || false
       });
+    });
+
+    setSearchState({
+      documents,
+      documentTypes: types
     });
     setDocumentTypes(types);
   };
 
   const handleSearch = async (searchTerm: string) => {
     if (!searchTerm.trim()) {
-      setSearchResults([]);
-      setSelectedDocs({
-        selectedIndices: new Set<number>(),
-        selectedTexts: [],
-        documentTypes: new Map<string, DocumentTypeInfo>()
+      setSearchState({
+        documents: new Map(),
+        documentTypes: new Map()
       });
-      setSelectedText([]);
       setDocumentTypes(new Map());
       return;
     }
@@ -123,53 +105,17 @@ const SearchComponent = ({ setSelectedText, setDocumentTypes, documentTypes }: S
     setIsSearching(true);
     try {
       const citations = await bedrockService.searchDocuments(searchTerm);
-      setSearchResults(citations);
-      updateDocumentTypesFromResults(citations);
-      // Clear selections when new search is performed
-      setSelectedDocs({
-        selectedIndices: new Set<number>(),
-        selectedTexts: [],
-        documentTypes: new Map<string, DocumentTypeInfo>()
-      });
-      setSelectedText([]);
+      processSearchResults(citations);
     } catch (error) {
       console.error('Error searching Knowledge Base:', error);
-      setSearchResults([]);
-      setSelectedDocs({
-        selectedIndices: new Set<number>(),
-        selectedTexts: [],
-        documentTypes: new Map<string, DocumentTypeInfo>()
+      setSearchState({
+        documents: new Map(),
+        documentTypes: new Map()
       });
-      setSelectedText([]);
       setDocumentTypes(new Map());
     } finally {
       setIsSearching(false);
     }
-  };
-
-  const handleCitationSelect = (index: number, checked: boolean) => {
-    
-    const newSelectedDocs = { ...selectedDocs };
-    const newSelectedIndices = new Set(newSelectedDocs.selectedIndices);
-
-    if (checked) {
-      newSelectedIndices.add(index);
-    } else {
-      newSelectedIndices.delete(index);
-    }
-
-    // Update selected texts
-    const newSelectedTexts = Array.from(newSelectedIndices)
-      .map(idx => searchResults[idx].content.text);
-
-    const updatedSelectedDocs = {
-      selectedIndices: newSelectedIndices,
-      selectedTexts: newSelectedTexts,
-      documentTypes: selectedDocs.documentTypes
-    };
-
-    setSelectedDocs(updatedSelectedDocs);
-    setSelectedText(newSelectedTexts);
   };
 
   return (
@@ -191,24 +137,18 @@ const SearchComponent = ({ setSelectedText, setDocumentTypes, documentTypes }: S
       <div className="search-results">
         {isSearching ? (
           <p>Searching...</p>
-        ) : searchResults.length > 0 ? (
+        ) : searchState.documents.size > 0 ? (
           <ul className="list-unstyled">
             {(() => {
               const hasSelectedTypes = Array.from(documentTypes.values()).some(info => info.selected);
-              const visibleResults = hasSelectedTypes 
-                ? searchResults.filter(citation => {
-                    const docType = citation.metadata?._category || 'Uncategorized';
-                    return documentTypes.get(docType)?.selected ?? false;
-                  })
-                : searchResults;
+              const visibleDocuments = Array.from(searchState.documents.values()).filter(doc => {
+                return !hasSelectedTypes || documentTypes.get(doc.documentType)?.selected;
+              });
 
-              return visibleResults.map((citation, index) => (
-                <SearchResult
+              return visibleDocuments.map((document, index) => (
+                <DocumentResult
                   key={index}
-                  citation={citation}
-                  index={searchResults.indexOf(citation)}
-                  isSelected={selectedDocs.selectedIndices.has(searchResults.indexOf(citation))}
-                  onSelect={handleCitationSelect}
+                  document={document}
                 />
               ));
             })()}

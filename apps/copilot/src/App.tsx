@@ -7,7 +7,6 @@ import { DocumentTypeInfo } from './types/SearchTypes';
 import './App.css';
 
 function App() {
-  const [selectedText, setSelectedText] = useState<string[]>([]);
   const [documentTypes, setDocumentTypes] = useState<Map<string, DocumentTypeInfo>>(new Map());
 
   const handleTypeSelect = (type: string, selected: boolean) => {
@@ -38,13 +37,12 @@ function App() {
           <Row>
             <Col md={6}>
               <SearchComponent 
-                setSelectedText={setSelectedText} 
                 setDocumentTypes={setDocumentTypes}
                 documentTypes={documentTypes}
               />
             </Col>
             <Col md={6}>
-              <ChatComponent selectedText={selectedText} />
+              <ChatComponent />
             </Col>
           </Row>
         </Col>

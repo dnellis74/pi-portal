@@ -2,11 +2,7 @@ import { Form } from 'react-bootstrap';
 import { useState, KeyboardEvent, useEffect, useRef } from 'react';
 import { ChatMessage, bedrockService } from '../services/BedrockService';
 
-interface ChatComponentProps {
-  selectedText: string[];
-}
-
-const ChatComponent = ({ selectedText }: ChatComponentProps) => {
+const ChatComponent = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +28,7 @@ const ChatComponent = ({ selectedText }: ChatComponentProps) => {
 
     try {
       const newMessages = [...messages, userMessage];
-      const response = await bedrockService.sendChatMessage(newMessages, selectedText);
+      const response = await bedrockService.sendChatMessage(newMessages);
       
       const assistantMessage: ChatMessage = {
         role: 'assistant',
