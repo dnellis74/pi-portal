@@ -2,11 +2,14 @@
   "name": "pi-portal",
   "private": true,
   "workspaces": [
-    "apps/copilot"
+    "apps/copilot",
+    "apps/bob"
   ],
   "scripts": {
     "build:copilot": "npm run build --workspace=apps/copilot",
-    "dev:copilot": "npm run dev --workspace=apps/copilot"
+    "dev:copilot": "npm run dev --workspace=apps/copilot",
+    "build:bob": "npm run build --workspace=apps/bob",
+    "dev:bob": "npm run dev --workspace=apps/bob"
   },
   "version": "1.0.0",
   "engines": {
