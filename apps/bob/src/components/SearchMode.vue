@@ -114,4 +114,12 @@ const emit = defineEmits([
       </ul>
     </div>
   </div>
-</template> 
+</template>
+
+<style scoped>
+.folders h3 {
+  font-family: 'Roboto Condensed', sans-serif;
+  color: #274C77;
+  margin-bottom: 10px;
+}
+</style> 

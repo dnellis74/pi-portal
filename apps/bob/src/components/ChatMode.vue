@@ -82,4 +82,12 @@ const emit = defineEmits([
       </div>
     </div>
   </div>
-</template> 
+</template>
+
+<style scoped>
+.chat-folders h3 {
+  font-family: 'Roboto Condensed', sans-serif;
+  color: #274C77;
+  margin-bottom: 10px;
+}
+</style> 

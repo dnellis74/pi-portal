@@ -85,7 +85,6 @@ const props = defineProps({
                         fill="#274c77" fill-rule="nonzero"></path>
                 </g>
             </svg>
-            <h1>{{ title }}</h1>
         </div>
         <div class="bottom-bar"></div>
     </header>
@@ -99,6 +98,8 @@ const props = defineProps({
 .app-header {
     background-color: rgba(var(--color_38), 0.35);
     color: white;
+    position: relative;
+
 }
 
 .header-content {
@@ -106,7 +107,9 @@ const props = defineProps({
     display: flex;
     align-items: center;
     gap: 1rem;
-    height: 60px;
+    height: 100px;
+    position: relative;
+    left: 110px;
 }
 
 .header-content h1 {
