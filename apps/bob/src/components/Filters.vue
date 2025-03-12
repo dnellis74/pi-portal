@@ -62,6 +62,11 @@ const filterLabels = {
 </template>
 
 <style scoped>
+.sidebar {
+  background-color: #E7ECEF;
+  padding: 20px;
+}
+
 .no-filters {
   color: #8B8C89;
   font-style: italic;
@@ -80,6 +85,9 @@ const filterLabels = {
   color: #274C77;
   margin: 0 0 0.5rem 0;
   font-size: 1em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .filter-options {
@@ -90,5 +98,43 @@ const filterLabels = {
 
 .filter-checkbox {
   margin-right: 0.5rem;
+  width: 16px;
+  height: 16px;
+}
+
+/* Mobile styles */
+@media (max-width: 428px) {
+  .sidebar {
+    padding: 15px;
+  }
+
+  .filter-categories {
+    gap: 1rem;
+  }
+
+  .filter-category {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .filter-options {
+    padding: 5px;
+  }
+
+  .filter-options label {
+    padding: 8px 0;
+    border-bottom: 1px solid #E7ECEF;
+  }
+
+  .filter-options label:last-child {
+    border-bottom: none;
+  }
+
+  .filter-checkbox {
+    width: 20px;
+    height: 20px;
+  }
 }
 </style> 
