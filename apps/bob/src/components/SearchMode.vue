@@ -191,10 +191,37 @@ const handleSearch = () => {
 </template>
 
 <style scoped>
-.folders h3 {
-  font-family: 'Roboto Condensed', sans-serif;
-  color: #274C77;
-  margin-bottom: 10px;
+#searchMode {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 220px;
+  background-color: #E7ECEF;
+  padding: 20px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border-left: 1px solid #8B8C89;
+  border-right: 1px solid #8B8C89;
+  min-width: 0;
+}
+
+.folders {
+  width: 300px;
+  background-color: #fff;
+  padding: 20px;
+  overflow-y: auto;
+  border-left: 1px solid #8B8C89;
+  flex-shrink: 0;
 }
 
 .loading {
@@ -310,5 +337,98 @@ const handleSearch = () => {
 .arrow {
   font-size: 1.1rem;
   line-height: 1;
+}
+
+/* Responsive styles */
+@media (max-width: 428px) {
+  #searchMode {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    max-height: auto;
+    border-bottom: 1px solid #8B8C89;
+  }
+
+  .main {
+    border-left: none;
+    border-right: none;
+  }
+
+  .folders {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #8B8C89;
+  }
+
+  .search-bar {
+    padding: 15px;
+  }
+
+  .search-bar input {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+
+  .search-bar {
+    flex-direction: column;
+  }
+
+  .search-bar button {
+    width: 100%;
+  }
+
+  .result-item {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .result-item button {
+    align-self: flex-end;
+  }
+
+  .metadata {
+    flex-wrap: wrap;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .page-numbers {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .pagination-button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .page-number {
+    min-width: 1.8rem;
+    height: 1.8rem;
+    padding: 0;
+    font-size: 0.8rem;
+  }
+
+  /* Hide some pagination elements on mobile for cleaner look */
+  .ellipsis,
+  .page-number:not(.active):not(:first-child):not(:last-child) {
+    display: none;
+  }
+}
+
+/* Ensure the app container is full height on mobile */
+@media (max-width: 428px) {
+  :deep(.app-container) {
+    min-height: 100vh;
+    height: auto;
+  }
 }
 </style> 
