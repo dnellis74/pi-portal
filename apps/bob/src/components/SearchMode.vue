@@ -93,7 +93,14 @@ const handleSearch = () => {
             class="result-item"
           >
             <div>
-              <h3>{{ item.title }}</h3>
+              <h3>
+                <a 
+                  :href="item.source_uri" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="title-link"
+                >{{ item.title }}</a>
+              </h3>
               <p>{{ item.description }}</p>
               <div class="metadata">
                 <span class="category" v-if="item.category">{{ item.category }}</span>
@@ -374,6 +381,17 @@ const handleSearch = () => {
 .arrow {
   font-size: 1.1rem;
   line-height: 1;
+}
+
+.title-link {
+  color: #6096BA;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.title-link:hover {
+  color: #274C77;
+  text-decoration: underline;
 }
 
 /* Responsive styles */

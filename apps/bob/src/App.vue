@@ -85,6 +85,7 @@ const performSearch = async () => {
       category: result.documentAttributes?._category?.StringValue || 'uncategorized',
       jurisdiction: result.documentAttributes?.jurisdiction?.StringValue || 'unknown',
       uri: result.uri,
+      source_uri: result.documentAttributes?._source_uri?.StringValue || '',
       id: result.id,
       score: result.score
     }))

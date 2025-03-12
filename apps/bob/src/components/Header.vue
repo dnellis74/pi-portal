@@ -99,7 +99,8 @@ const props = defineProps({
     background-color: rgba(var(--color_38), 0.35);
     color: white;
     position: relative;
-
+    width: 100%;
+    overflow: hidden;
 }
 
 .header-content {
@@ -122,6 +123,7 @@ const props = defineProps({
 .header-logo {
     height: 100%;
     width: auto;
+    max-width: 100%;
 }
 
 .top-bar {
@@ -140,11 +142,13 @@ const props = defineProps({
         left: 0;
         padding: 0.5rem 1rem;
         height: 80px;
+        width: 100%;
     }
 
     .header-logo {
         height: 100%;
         width: auto;
+        max-width: 100%;
     }
 }
 </style>
