@@ -394,6 +394,33 @@ const handleSearch = () => {
   text-decoration: underline;
 }
 
+.add-to-folder {
+  padding: 0;
+  border: none;
+  background-color: #274C77;
+  color: white;
+  cursor: pointer;
+  border-radius: 50%;
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  aspect-ratio: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.add-to-folder.added {
+  background-color: #4CAF50;
+}
+
+.add-to-folder.added:hover {
+  background-color: #FF0000;
+}
+
 /* Responsive styles */
 @media (max-width: 428px) {
   #searchMode {
@@ -454,8 +481,6 @@ const handleSearch = () => {
 
   .add-to-folder {
     align-self: flex-end;
-    width: 44px;
-    height: 44px;
     margin-top: 10px;
   }
 
