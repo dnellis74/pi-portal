@@ -133,4 +133,18 @@ const props = defineProps({
     height: 4px;
     background-color: #274C77;
 }
+
+/* Mobile styles */
+@media (max-width: 428px) {
+    .header-content {
+        left: 0;
+        padding: 0.5rem 1rem;
+        height: 80px;
+    }
+
+    .header-logo {
+        height: 100%;
+        width: auto;
+    }
+}
 </style>

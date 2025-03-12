@@ -195,6 +195,7 @@ const handleSearch = () => {
   display: flex;
   flex: 1;
   overflow: hidden;
+  height: 100%;
 }
 
 .sidebar {
@@ -213,6 +214,42 @@ const handleSearch = () => {
   border-left: 1px solid #8B8C89;
   border-right: 1px solid #8B8C89;
   min-width: 0;
+  overflow: hidden;
+}
+
+.results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  background-color: #F7F7F7;
+  border-bottom: 1px solid #8B8C89;
+  padding: 20px;
+  gap: 10px;
+}
+
+.search-bar input {
+  width: 60%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #8B8C89;
+  border-radius: 6px;
+}
+
+.search-bar button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #6096BA;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
 }
 
 .folders {
@@ -343,59 +380,113 @@ const handleSearch = () => {
 @media (max-width: 428px) {
   #searchMode {
     flex-direction: column;
+    overflow: auto;
+    height: auto;
   }
 
   .sidebar {
     width: 100%;
-    max-height: auto;
+    height: auto;
     border-bottom: 1px solid #8B8C89;
   }
 
   .main {
-    border-left: none;
-    border-right: none;
+    flex: none;
+    overflow: visible;
+    height: auto;
+    min-height: 50vh;
   }
 
-  .folders {
-    width: 100%;
-    border-left: none;
-    border-top: 1px solid #8B8C89;
+  .results {
+    overflow: visible;
+    height: auto;
+    min-height: 200px;
   }
 
   .search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    height: auto;
     padding: 15px;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #F7F7F7;
   }
 
   .search-bar input {
     width: 100%;
-    margin-right: 0;
-    margin-bottom: 10px;
-  }
-
-  .search-bar {
-    flex-direction: column;
+    margin: 0;
+    height: 44px;
   }
 
   .search-bar button {
     width: 100%;
+    height: 44px;
   }
 
   .result-item {
     flex-direction: column;
-    gap: 1rem;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #E7ECEF;
+    border-radius: 8px;
+    background-color: white;
   }
 
-  .result-item button {
+  .add-to-folder {
     align-self: flex-end;
+    width: 44px;
+    height: 44px;
+    margin-top: 10px;
+  }
+
+  .folders {
+    width: 100%;
+    height: auto;
+    min-height: 100px;
+    border-left: none;
+    border-top: 1px solid #8B8C89;
+    background-color: white;
+  }
+
+  .folders ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .folders li {
+    padding: 10px 0;
+    border-bottom: 1px solid #E7ECEF;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .folders li:last-child {
+    border-bottom: none;
+  }
+
+  .result-item h3 {
+    margin-bottom: 10px;
+  }
+
+  .result-item p {
+    margin-bottom: 10px;
   }
 
   .metadata {
     flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .pagination {
     flex-wrap: wrap;
     gap: 0.5rem;
+    padding: 15px;
+    margin-top: 1rem;
+    background-color: white;
   }
 
   .page-numbers {
@@ -408,13 +499,14 @@ const handleSearch = () => {
   .pagination-button {
     flex: 1;
     justify-content: center;
+    min-height: 44px;
   }
 
   .page-number {
-    min-width: 1.8rem;
-    height: 1.8rem;
+    min-width: 44px;
+    height: 44px;
     padding: 0;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 
   /* Hide some pagination elements on mobile for cleaner look */
